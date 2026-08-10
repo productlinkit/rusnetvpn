@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>RusVPN: Fast, Secure &amp; Private VPN Service | Protect Your Online Privacy</title>
+<!-- Inline so it costs no request and cannot 404 the way the default
+     /favicon.ico lookup did on every single page load. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23C81E27'/%3E%3Cpath d='M16 6.5l7.5 3v6.2c0 4.6-3.1 8.1-7.5 9.8-4.4-1.7-7.5-5.2-7.5-9.8V9.5l7.5-3z' fill='none' stroke='%23fff' stroke-width='2.1' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <meta name="description" content="RusVPN - Secure, fast, and reliable VPN service. Access blocked content, protect your privacy, and browse anonymously with servers worldwide." />
 <meta name="keywords" content="VPN, secure VPN, privacy, online security, anonymous browsing, RusVPN" />
 <meta property="og:title" content="RusVPN - Secure and Fast VPN Service" />
@@ -1824,7 +1827,13 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
     </div>
     <div class="navact">
       <div class="lang" data-lang-picker>
-        <button type="button" class="lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language">
+        <!-- 2.5.3 Label in Name: the button reads "EN" on screen but was named
+             "Change language", so the visible label appeared nowhere in the
+             accessible name — someone driving by voice saying "click EN" got
+             nothing. The name is built from content now, so it is "Language: EN"
+             and follows the code when the language changes. -->
+        <button type="button" class="lang-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="sr-only">Language: </span>
           <svg class="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg>
           <span class="code" data-lang-code>EN</span>
           <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
@@ -4222,7 +4231,13 @@ function openAuth(v, email, silent){
   aForm.style.display = '';
   aDone.style.display = 'none';
   setView(v);
+  /* 3.3.7 Redundant Entry. The email survives a view switch and survives closing
+     and reopening, because the field is never reset. The gap was the other
+     entrance: typing into the CTA band and then clicking a pricing button
+     instead of submitting it: the address was on screen, and the panel asked
+     for it again anyway. Carry whatever has already been typed. */
   if(email) aEmail.value = email;
+  else if(!aEmail.value && ctaEmail && ctaEmail.value.trim()) aEmail.value = ctaEmail.value.trim();
   auth.classList.add('is-open');
   auth.scrollTop = 0;
   document.body.style.overflow = 'hidden';
