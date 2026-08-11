@@ -109,7 +109,41 @@
   --shadow-lg:0 60px 120px -50px rgba(14,18,22,.42);
   --r-xl:34px; --r-lg:26px; --r-md:18px; --r-sm:12px;
   --pad:112px; --maxw:1280px;
-  --ease:cubic-bezier(.22,1,.36,1);
+  /* ---- motion ----
+     The page ran everything off one token, cubic-bezier(.22,1,.36,1). That is
+     easeOutQuint off the shelf, and using it for entrances, exits, hovers and
+     state swaps alike is the thing that reads as "framework default": no
+     gesture can mean anything when every gesture is the same. Its shape is
+     also the problem — y hits 1 by x=.22, so ~90% of the distance is covered
+     in the first third and what you perceive is a snap followed by nothing.
+
+     What makes a motion system ownable is not an exotic curve; a curve odd
+     enough to be distinctive on its own mostly just looks broken. It is the
+     relationships: enter and exit are different jobs and get different curves,
+     exits are shorter than entrances because leaving is not the half you are
+     meant to read, and layers lead and follow instead of moving on one clock.
+
+     The character here is a connection engaging — a switch thrown, a bolt
+     seated. Decisive commit, readable travel, firm arrival, no wobble. Bounce
+     is deliberately not in the family: it reads as toy, and this is a product
+     whose whole claim is that it holds. */
+  --ease-enter:cubic-bezier(.21,.78,.26,1);
+  /* the exact reflection of --ease-enter, (1-x2,1-y2,1-x1,1-y1) — an exit that
+     is the entrance run backwards is what makes the pair read as one hand */
+  --ease-exit:cubic-bezier(.74,0,.79,.22);
+  /* A to B in place, where there is no arrival to sell and no departure */
+  --ease-swap:cubic-bezier(.62,.02,.24,1);
+  /* the accent: 6% past the mark, then settle. Only where the travel is big
+     enough for 6% to register, and never on a number — a counter that overran
+     its value would be telling you something we do not mean. */
+  --ease-seat:cubic-bezier(.18,.86,.28,1.06);
+  /* --ease stays as the entrance so the sixty-odd transitions already written
+     against it inherit the new character without restating a duration each */
+  --ease:var(--ease-enter);
+  --t-1:150ms;  /* exits and small moves */
+  --t-2:220ms;  /* veils and fades */
+  --t-3:320ms;  /* in-place swaps */
+  --t-4:420ms;  /* entrances that travel */
   /* one family for the whole page — headings included */
   --font:'Host Grotesk','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
@@ -833,7 +867,9 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 }
 .tabs{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);flex-wrap:nowrap;max-width:100%;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .tabs::-webkit-scrollbar{display:none;}
-.tabs button{flex:0 0 auto;padding:9px 17px;border-radius:999px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.72);transition:background .35s,color .35s;min-height:40px;}
+/* same untimed transition, same fix — the app tabs and the plan segments are
+   the same control doing the same job and should not ease differently */
+.tabs button{flex:0 0 auto;padding:9px 17px;border-radius:999px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.72);transition:background var(--t-3) var(--ease-swap),color var(--t-3) var(--ease-swap);min-height:40px;}
 .tabs button.on{background:#fff;color:var(--ink);}
 .applist{display:flex;flex-direction:column;gap:14px;margin-top:28px;}
 .applist li{display:flex;gap:13px;align-items:flex-start;list-style:none;font-size:15px;color:rgba(255,255,255,.76);}
@@ -935,7 +971,11 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .seg button{
   padding:9px 6px;border-radius:999px;
   font-size:13.5px;font-weight:600;color:var(--body);text-align:center;white-space:nowrap;
-  transition:background .35s,color .35s,box-shadow .35s;position:relative;
+  /* named no timing function, so this inherited the CSS initial value: `ease`,
+     cubic-bezier(.25,.1,.25,1) — the most default curve there is, sitting on
+     the control that drives the price roll. --ease-swap because a segment
+     turning on is A becoming B in place: nothing arrives and nothing leaves. */
+  transition:background var(--t-3) var(--ease-swap),color var(--t-3) var(--ease-swap),box-shadow var(--t-3) var(--ease-swap);position:relative;
   border:1px solid transparent;min-height:44px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
 }
@@ -970,8 +1010,23 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .pcard{background:var(--card);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);border:1px solid var(--line-2);display:flex;flex-direction:column;}
 .pcard .amt{display:flex;align-items:flex-start;gap:6px;margin-top:26px;}
 .pcard .amt .cur{font-size:26px;font-weight:600;margin-top:10px;color:var(--body);}
-.pcard .amt .val{font-size:clamp(52px,7vw,86px);font-weight:700;letter-spacing:-.05em;line-height:.92;transition:opacity .3s,transform .35s var(--ease);}
-.pcard .amt.flip .val{opacity:0;transform:translateY(-8px);}
+.pcard .amt .val{font-size:clamp(52px,7vw,86px);font-weight:700;letter-spacing:-.05em;line-height:.92;}
+/* The price used to fade out and back in on one curve, over the same 8px, in
+   the same direction — so the old figure left upward and the new one arrived
+   from upward too. Two states, one gesture: it read as the number blinking
+   rather than as a value being replaced, and there was nothing in it to tell
+   you which way the plan had moved.
+
+   Now it rolls, like the split-flap a price deserves. Out goes up on the exit
+   curve and is over quickly; in comes up from below on the seat curve and takes
+   more than twice as long, because arriving is the half you are meant to read.
+   Travel is in em so it tracks the clamped font size instead of being 8px
+   against 52px on a phone and 8px against 86px on a desktop — the same gesture
+   at both ends rather than the same number of pixels. */
+@keyframes priceOut{to{opacity:0;transform:translateY(-.30em);}}
+@keyframes priceIn{from{opacity:0;transform:translateY(.38em);}to{opacity:1;transform:none;}}
+.pcard .amt.roll-out .val{animation:priceOut var(--t-1) var(--ease-exit) both;}
+.pcard .amt.roll-in  .val{animation:priceIn  var(--t-4) var(--ease-seat) both;}
 .pcard .per{font-size:14.5px;color:var(--body);margin-top:14px;}
 .pcard .per b{color:var(--ink);}
 .pcard .save{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;border-radius:999px;background:var(--green-tint);color:var(--green-text);font-size:13px;font-weight:700;}
@@ -1730,6 +1785,12 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
     animation-duration:.001ms !important;
     animation-iteration-count:1 !important;
     transition-duration:.001ms !important;
+    /* Delays survived the old reset, and a zeroed duration behind a live delay
+       is not stillness — it is the same wait with nothing to look at during it.
+       The lead/follow offsets in the dialog and the .12s holds on the rail
+       cards would have left elements blank for their delay and then popped. */
+    animation-delay:0s !important;
+    transition-delay:0s !important;
     scroll-behavior:auto !important;
   }
   .up{opacity:1;transform:none;}
@@ -1761,10 +1822,29 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
   margin:auto;overflow:visible;
 }
 .dlg::backdrop{background:rgba(9,12,16,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
-.dlg[open]{animation:dlgIn .28s var(--ease) both;}
-.dlg[open]::backdrop{animation:fadeIn .28s var(--ease) both;}
-@keyframes dlgIn{from{opacity:0;transform:translateY(12px) scale(.97);}to{opacity:1;transform:none;}}
-@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+/* The panel and its backdrop used to run the same duration on the same curve
+   from the same frame, which is why the whole thing arrived as one flat plate:
+   nothing led, nothing followed, and there was no exit at all — close() pulled
+   the dialog out of the top layer and it vanished between two frames.
+
+   Now the room dims first and the panel follows it in. The veil is quick and
+   linear-ish because it is ground, not gesture; the panel starts 70ms later,
+   travels further, and lands on the seat curve. Leaving reverses the order and
+   takes about a third of the time: the panel goes first and the veil clears
+   after it, so what you last see is the page coming back rather than a hole
+   where the dialog was. Exits are short on purpose — a dismissal you have to
+   wait out is the single most expensive 200ms in an interface. */
+.dlg[open]{animation:dlgIn var(--t-4) var(--ease-seat) 70ms both;}
+.dlg[open]::backdrop{animation:veilIn var(--t-2) var(--ease-enter) both;}
+@keyframes dlgIn{from{opacity:0;transform:translateY(18px) scale(.966);}to{opacity:1;transform:none;}}
+@keyframes veilIn{from{opacity:0;}to{opacity:1;}}
+/* [open] is still set while this runs — the dialog does not leave the top layer
+   until the animation has finished — so these have to outrank the rules above
+   on specificity rather than on source order alone. */
+.dlg[open].is-closing{animation:dlgOut var(--t-1) var(--ease-exit) both;}
+.dlg[open].is-closing::backdrop{animation:veilOut var(--t-2) var(--ease-exit) 40ms both;}
+@keyframes dlgOut{to{opacity:0;transform:translateY(10px) scale(.985);}}
+@keyframes veilOut{to{opacity:0;}}
 .dlg-inner{padding:clamp(22px,3vw,30px);}
 .dlg-top{display:flex;align-items:flex-start;gap:14px;}
 .dlg-ic{
@@ -3786,30 +3866,83 @@ var io = new IntersectionObserver(function(es){
 },{rootMargin:'0px 0px -12% 0px',threshold:.06});
 $$('.up').forEach(function(el){ io.observe(el); });
 
+/* Sample a cubic-bezier() timing function from a CSS token, so JS-driven motion
+   can run the same curve the stylesheet runs instead of an approximation of it.
+   Newton from t=x converges in a handful of steps for any curve whose x is
+   monotonic, which every legal cubic-bezier() timing function is. */
+function cssBezier(prop, fallback){
+  var raw = getComputedStyle(document.documentElement).getPropertyValue(prop);
+  var m = String(raw).match(/cubic-bezier\(([^)]+)\)/);
+  var p = m ? m[1].split(',').map(function(n){ return parseFloat(n); }) : null;
+  if(!p || p.length !== 4 || p.some(function(n){ return !isFinite(n); })) p = fallback;
+  var x1 = p[0], y1 = p[1], x2 = p[2], y2 = p[3];
+  function A(a,b){ return 1 - 3*b + 3*a; }
+  function B(a,b){ return 3*b - 6*a; }
+  function C(a){ return 3*a; }
+  function at(t,a,b){ return ((A(a,b)*t + B(a,b))*t + C(a))*t; }
+  function slope(t,a,b){ return 3*A(a,b)*t*t + 2*B(a,b)*t + C(a); }
+  return function(x){
+    if(x <= 0) return 0;
+    if(x >= 1) return 1;
+    var t = x;
+    for(var i = 0; i < 8; i++){
+      var d = at(t,x1,x2) - x;
+      if(Math.abs(d) < 1e-6) break;
+      var s = slope(t,x1,x2);
+      if(Math.abs(s) < 1e-6) break;
+      t -= d / s;
+    }
+    return at(t,y1,y2);
+  };
+}
+var easeEnter = cssBezier('--ease-enter', [.21,.78,.26,1]);
+
 /* ---------- count up ----------
    Targets come from FACTS, never from the markup. The final frame is written
    explicitly rather than left to whatever the easing lands on, so the number you
-   are left looking at is the number we claim. */
+   are left looking at is the number we claim.
+
+   The curve is no longer a hand-rolled easeOutCubic. It is --ease-enter, read
+   off the stylesheet and sampled here, so a number finding its value and a
+   panel arriving on screen are the same gesture rather than two systems that
+   happen to look similar — change the token and both move.
+
+   Duration follows how far the number actually has to travel. On a flat 1400ms
+   the 5 for continents spent as long crossing five integers as 700 spent
+   crossing seven hundred, so the small tile visibly stepped while the large one
+   blurred. And the tiles start 90ms apart rather than on one frame, because
+   four numbers landing together read as a single element repainting rather than
+   as four facts being counted. */
 $$('[data-count-fact]').forEach(function(el){
   var v = FACTS[el.dataset.countFact];
   if(v !== undefined) el.dataset.count = v;
 });
+var COUNT_LEAD = 90;
 var cio = new IntersectionObserver(function(es){
   es.forEach(function(e){
     if(!e.isIntersecting) return;
     cio.unobserve(e.target);
     var el = e.target, end = parseFloat(el.dataset.count), dec = parseInt(el.dataset.dec||'0',10), t0 = null;
     if(RM || !isFinite(end)){ el.textContent = (isFinite(end) ? end : 0).toFixed(dec); return; }
+    var dur = 700 + 260 * Math.abs(Math.round(end)).toString().length;
+    var lead = COUNT_LEAD * (parseInt(el.dataset.countOrder || '0', 10) || 0);
     function step(t){
-      if(!t0) t0 = t;
-      var p = Math.min((t-t0)/1400, 1), e2 = 1-Math.pow(1-p,3);
+      if(t0 === null) t0 = t;
+      var p = (t - t0 - lead) / dur;
+      if(p < 0){ requestAnimationFrame(step); return; }   /* still in the stagger */
       if(p >= 1){ el.textContent = end.toFixed(dec); return; }
-      el.textContent = (end*e2).toFixed(dec);
+      el.textContent = (end * easeEnter(p)).toFixed(dec);
       requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
   });
 },{threshold:.5});
+/* Stagger order comes from position in the tile group, not from the order the
+   observer happens to deliver the entries in — that order is not specified and
+   a cascade that runs right-to-left on one engine is worse than none. */
+$$('.stats').forEach(function(g){
+  $$('[data-count]', g).forEach(function(el, i){ el.dataset.countOrder = i; });
+});
 $$('[data-count]').forEach(function(el){ cio.observe(el); });
 
 /* ==========================================================================
@@ -3991,6 +4124,11 @@ var dlgLastFocus = null;
 var dlgTrap = trapTab(dlg);
 function openDialog(o){
   var kind = o.kind || 'info';
+  /* An open landing on top of an exit still in flight. The className below
+     clears .is-closing, but the flag and the timer are what would otherwise
+     close this dialog a moment after it appeared. */
+  clearTimeout(dlgExitTimer);
+  dlgClosing = false;
   dlg.className = 'dlg dlg--' + kind;
   dlgTitle.textContent = o.title;
   dlgBody.innerHTML = o.body;
@@ -4013,7 +4151,12 @@ function openDialog(o){
      of the document with no idea where they were. Recording it makes the return
      deterministic instead of dependent on the engine. */
   dlgLastFocus = document.activeElement;
-  if(dlgSupported) dlg.showModal(); else dlg.setAttribute('open','');
+  /* showModal() on an already-open dialog throws InvalidStateError, and after
+     the reset above the dialog can still be open — the exit was cancelled, not
+     completed. The content has been replaced either way, so re-showing is both
+     unnecessary and the only thing that could fail here. */
+  if(dlgSupported){ if(!dlg.open) dlg.showModal(); }
+  else dlg.setAttribute('open','');
   document.addEventListener('keydown', dlgTrap);
   /* land on the least destructive action, never on "delete everything" */
   var safe = $('.btn-ghost', dlgActions) || $('button', dlgActions);
@@ -4044,11 +4187,47 @@ dlg.addEventListener('close', restoreDlgFocus);
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape' && (dlg.open || dlg.hasAttribute('open'))) e.stopPropagation();
 }, true);
-function closeDialog(){
+/* Closing is deferred by exactly one animation. A native <dialog> leaves the
+   top layer the instant close() runs, so an exit can only exist if close() is
+   held back until the frames have played — there is no CSS-only way to animate
+   an element that is already gone.
+   Two things have to be true for that to be safe. The dialog must not accept a
+   second close while the first is playing, or the restore fires twice. And the
+   close must happen even if 'animationend' never arrives — a dismissal that can
+   get stuck open is worse than no animation at all — hence the timer, set past
+   the animation's own length. */
+var dlgClosing = false, dlgExitTimer = 0;
+function dlgHardClose(){
+  if(!dlgClosing) return;
+  dlgClosing = false;
+  clearTimeout(dlgExitTimer);
+  dlg.classList.remove('is-closing');
   if(dlgSupported && dlg.open){ dlg.close(); return; }  /* 'close' does the rest */
   dlg.removeAttribute('open');
   restoreDlgFocus();
 }
+function closeDialog(){
+  if(dlgClosing) return;
+  if(RM || !dlgSupported){ dlgClosing = true; dlgHardClose(); return; }
+  dlgClosing = true;
+  dlg.classList.add('is-closing');
+  dlg.addEventListener('animationend', function onExit(e){
+    if(e.target !== dlg || e.animationName !== 'dlgOut') return;
+    dlg.removeEventListener('animationend', onExit);
+    dlgHardClose();
+  });
+  dlgExitTimer = setTimeout(dlgHardClose, 600);
+}
+/* Esc reaches a native <dialog> without passing through closeDialog(), and the
+   default action is an immediate close — so the exit only exists for the
+   keyboard if the default is taken over. 'cancel' is the documented hook and is
+   cancelable; the dialog still closes, just through the same path as the X and
+   the backdrop rather than a second one that looks different. */
+dlg.addEventListener('cancel', function(e){
+  if(RM || !dlgSupported) return;
+  e.preventDefault();
+  closeDialog();
+});
 $('#dlg-x').addEventListener('click', closeDialog);
 /* a click on the backdrop lands on the <dialog> itself, never on its contents */
 dlg.addEventListener('click', function(e){ if(e.target === dlg) closeDialog(); });
@@ -4349,14 +4528,50 @@ BEST.save = 'Save ' + BEST.savePct + '% · best deal';
 
 var pAmt = $('#p-amt'), pVal = $('#p-val'), pName = $('#p-name'), pPer = $('#p-per'), pSave = $('#p-save'), pCta = $('#p-cta');
 var pPanel = $('#plan-panel');
+/* The swap used to sit on a setTimeout(180) with no relation to the 300ms and
+   350ms transitions it was meant to land between, so the duration lived in two
+   places and any change to one silently desynced the other. It now reads the
+   exit's duration straight off --t-1, so the stylesheet stays the one place a
+   duration is written and the figure is replaced exactly as the old one
+   finishes leaving.
+
+   Deliberately a timer and not 'animationend'. Hanging it off the event was
+   the first shape of this and it is wrong for a number: an animation on an
+   element the engine is not currently rendering stays pending, and traced
+   here it sat pending for 590ms before dispatching start and end 1ms apart.
+   The event is a report that painting happened, and the price has to be
+   correct whether or not anyone painted it. */
+function cssMs(prop, fallback){
+  var v = String(getComputedStyle(document.documentElement).getPropertyValue(prop)).trim();
+  var n = parseFloat(v);
+  if(!isFinite(n)) return fallback;
+  return /ms\s*$/.test(v) ? n : n * 1000;      /* CSS time is s unless it says ms */
+}
+var ROLL_OUT_MS = cssMs('--t-1', 150);
+var pPending = null, pRollTimer = 0;
+function commitPrice(){
+  if(pPending === null) return;
+  pVal.textContent = pPending;
+  pPending = null;
+  pAmt.classList.remove('roll-out');
+  void pAmt.offsetWidth;                       /* restart, do not resume */
+  pAmt.classList.add('roll-in');
+}
+function rollPrice(v){
+  pPending = v;
+  /* both classes off with a reflow between: re-adding a class the element
+     already carries does not restart its animation, so switching plans faster
+     than the roll finishes would otherwise leave the old figure mid-exit */
+  pAmt.classList.remove('roll-in','roll-out');
+  void pAmt.offsetWidth;
+  pAmt.classList.add('roll-out');
+  clearTimeout(pRollTimer);
+  pRollTimer = setTimeout(commitPrice, ROLL_OUT_MS + 16);
+}
 function paintPlan(i, announceIt){
   var d = PLANS[i];
-  if(RM){
-    pVal.textContent = d.v;
-  }else{
-    pAmt.classList.add('flip');
-    setTimeout(function(){ pVal.textContent = d.v; pAmt.classList.remove('flip'); }, 180);
-  }
+  if(RM) pVal.textContent = d.v;
+  else   rollPrice(d.v);
   pName.textContent = d.n;
   pPer.textContent = d.per;
   pSave.style.display = d.save ? '' : 'none';
