@@ -4045,6 +4045,59 @@ function wireMenu(opts){
    `inert` on the siblings is what actually delivers it — unfocusable and removed
    from the accessibility tree in one attribute. Browsers without it fall back to
    the wrap-around trap below, which handles the keyboard case at least. */
+/* A focus restore is only as good as the element it points at. Every overlay
+   here records document.activeElement on the way in and focuses it again on the
+   way out, which is correct right up until the opener stops being focusable —
+   and it routinely does. Signing in hides the Login links the auth panel was
+   opened from, and opening that panel from the mobile sheet closes the sheet.
+   In both cases the recorded element is still in the document and still has a
+   focus method, so the usual `el && el.focus` guard passes, focus() then does
+   nothing at all, and the user is dropped on <body> at the top of the page —
+   the exact outcome the restore exists to prevent, arrived at silently.
+
+   Measured on this page before the fix: opening from the mobile sheet and
+   pressing Escape landed on BODY, and so did Escape after a successful sign-in.
+   Opening from the nav Login and pressing Escape was always fine, which is why
+   this survived — the common path works and the broken ones say nothing. */
+var FOCUSABLE = 'a[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[contenteditable],[tabindex]';
+function canTakeFocus(el){
+  if(!el || el.nodeType !== 1 || !el.isConnected || typeof el.focus !== 'function') return false;
+  /* <body> is connected, visible, and has a focus() method, so every liveness
+     test passes — and focusing it is exactly the failure being guarded against.
+     Arriving on the panel by deep link records document.body as the opener,
+     because there was no opener. Require something actually focusable. */
+  if(!el.matches(FOCUSABLE)) return false;
+  if(el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+  if(el.closest('[inert]')) return false;
+  if(!el.getClientRects().length) return false;      /* display:none, or a panel that has closed */
+  var cs = getComputedStyle(el);
+  return cs.visibility !== 'hidden' && cs.display !== 'none';
+}
+/* Back to the opener when it survived; otherwise to whatever now holds its
+   place — the account button is what the Login link becomes once you are signed
+   in — and only then to the main landmark, which is at least somewhere a screen
+   reader can announce rather than a void at the top of the document. */
+function restoreFocus(target, fallbacks){
+  if(canTakeFocus(target)){ target.focus(); return target; }
+  var list = fallbacks || [];
+  for(var i = 0; i < list.length; i++){
+    var found = $$(list[i]).filter(canTakeFocus)[0];
+    if(found){ found.focus(); return found; }
+  }
+  var main = $('#main') || $('main');
+  if(main){
+    /* -1 so it takes programmatic focus without joining the tab order */
+    if(!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+    main.focus();
+    return main;
+  }
+  return null;
+}
+/* the openers an overlay can fall back to, most-equivalent first */
+var AUTH_FALLBACK = ['#acct-btn', 'header .signin[data-auth]', 'header [data-auth]', '.burger', 'footer [data-auth]'];
+/* a confirm can be raised from anywhere, so its fallback is the surface that
+   raised it — the account page if that is still up — before the header */
+var DLG_FALLBACK = ['#account.is-open .ac-nav button.on', '#account.is-open button', '#acct-btn', '.burger'];
 var INERT_OK = 'inert' in HTMLElement.prototype;
 /* the live regions stay reachable (they are how we speak), and so do the dialog
    and the toast host — a <dialog> that has been marked inert cannot be opened,
@@ -4166,12 +4219,14 @@ function restoreDlgFocus(){
   document.removeEventListener('keydown', dlgTrap);
   var target = dlgLastFocus;
   dlgLastFocus = null;
-  if(!target || !target.focus) return;
   /* Deferred by a tick on purpose. The engine performs its own focus restore
      *after* dispatching 'close', and it overwrote an immediate call — the
      trigger was focused, then blurred to <body> a moment later, which reads as
-     the dialog throwing you back to the top of the page. Going last wins. */
-  window.setTimeout(function(){ target.focus(); }, 0);
+     the dialog throwing you back to the top of the page. Going last wins.
+     Through restoreFocus for the same reason the auth panel goes through it:
+     raising this from inside the account page and pressing Escape was landing
+     on a heading rather than on the button that raised it. */
+  window.setTimeout(function(){ restoreFocus(target, DLG_FALLBACK); }, 0);
 }
 /* Esc on a native <dialog> is handled by the browser and fires 'close' without
    ever going through closeDialog() — hanging the restore off the event instead
@@ -5244,8 +5299,13 @@ function closeAuth(silent){
   document.body.style.overflow = document.body.classList.contains('menu-open') ? 'hidden' : '';
   setPageInert(auth, false);
   document.removeEventListener('keydown', authTrap);
-  /* 2.4.3 — focus goes back to whatever opened this, not to the top of the page */
-  if(aLastFocus && aLastFocus.focus) aLastFocus.focus();
+  /* 2.4.3 — focus goes back to whatever opened this, not to the top of the page.
+     Via restoreFocus because the opener is often not there any more: the Login
+     link that raised this panel is hidden by the time a successful sign-in
+     closes it, and the sheet's copy of that link is hidden the moment the sheet
+     shuts behind you. */
+  restoreFocus(aLastFocus, AUTH_FALLBACK);
+  aLastFocus = null;
   if(silent) return;
   if(history.state && history.state.rvAuth) history.back();
   else history.replaceState(null, '', location.pathname + location.search);
@@ -5400,7 +5460,10 @@ function closeAccount(silent){
   document.body.style.overflow = document.body.classList.contains('menu-open') ? 'hidden' : '';
   setPageInert(acPage, false);
   document.removeEventListener('keydown', acTrap);
-  if(acLastFocus && acLastFocus.focus) acLastFocus.focus();
+  /* same fault as the auth panel: the account page is routinely opened from the
+     account menu, which is closed by the time you come back out of it */
+  restoreFocus(acLastFocus, AUTH_FALLBACK);
+  acLastFocus = null;
   if(silent) return;
   if(history.state && history.state.rvAcct) history.back();
   else history.replaceState(null, '', location.pathname + location.search);
