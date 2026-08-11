@@ -797,7 +797,29 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
    APPS
    ========================================================================== */
 .apps{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(40px,5vw,84px) clamp(24px,3.6vw,72px);position:relative;overflow:hidden;}
-.apps::before{content:"";position:absolute;top:-30%;right:-10%;width:60%;height:120%;background:radial-gradient(circle,rgba(225,39,48,.28),transparent 62%);pointer-events:none;}
+/* Same fault the trial card had, and the same fix. A `circle` in a box 60%
+   wide: farthest-corner sizing measured the radius off the box's long diagonal,
+   so the transparent stop sat well outside the box's own half-width and the red
+   was still carrying alpha when the box ran out. right:-10% + width:60% puts
+   that edge on the card's midline, which is where the flat vertical cut came
+   from — the colours were never the problem. `ellipse closest-side` lands the
+   last stop on the box edge, so there is nothing left to clip, and the box is
+   widened so the wash has room to fall off gradually instead of ending as a
+   tight blob. Eased ramp rather than one straight run to zero, because
+   perceived lightness is not linear in alpha and a linear run reads as a ring.
+   Last stop holds the hue at zero alpha, not `transparent` — that keyword is
+   rgba(0,0,0,0) and drags the blend toward grey on the way out. */
+.apps::before{
+  content:"";position:absolute;top:-46%;right:-16%;width:92%;height:150%;pointer-events:none;
+  background:radial-gradient(ellipse closest-side,
+    rgba(225,39,48,.32) 0%,
+    rgba(225,39,48,.28) 16%,
+    rgba(225,39,48,.21) 33%,
+    rgba(225,39,48,.135) 50%,
+    rgba(225,39,48,.076) 66%,
+    rgba(225,39,48,.034) 81%,
+    rgba(225,39,48,0) 100%);
+}
 .apps .eyebrow{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.14);}
 .apps h2{color:#fff;font-size:clamp(28px,3.4vw,46px);}
 .apps .lead{color:rgba(255,255,255,.66);max-width:58ch;}
