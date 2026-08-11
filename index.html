@@ -943,7 +943,28 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
    is the last thing on the page that should be hard to read. */
 .pcard .fine{font-size:13.5px;color:var(--muted);margin-top:14px;line-height:1.55;max-width:52ch;}
 .trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:26px;position:relative;overflow:hidden;}
-.trial::after{content:"";position:absolute;bottom:-40%;left:-20%;width:70%;height:100%;background:radial-gradient(circle,rgba(37,99,235,.35),transparent 65%);}
+/* The glow was a `circle` inside a 400x722 box. farthest-corner sizing put its
+   transparent stop at a ~268px radius while the box's own half-width was
+   200px — so the wash was still around .09 alpha where the box ended and got
+   cut off flat. That straight vertical edge down the middle of the card was
+   the whole of the "hard transition"; the colours were never the problem.
+   `ellipse closest-side` lands the last stop exactly on the box edge, so
+   there is nothing left to clip. The stops in between are an eased ramp
+   rather than one straight run to zero, which is what stops the falloff
+   reading as a ring — perceived lightness is not linear in alpha. The final
+   stop keeps the hue at zero alpha instead of `transparent`, which is
+   rgba(0,0,0,0) and drags the blend toward grey. */
+.trial::after{
+  content:"";position:absolute;bottom:-38%;left:-26%;width:96%;height:104%;
+  background:radial-gradient(ellipse closest-side,
+    rgba(37,99,235,.38) 0%,
+    rgba(37,99,235,.33) 16%,
+    rgba(37,99,235,.25) 33%,
+    rgba(37,99,235,.16) 50%,
+    rgba(37,99,235,.09) 66%,
+    rgba(37,99,235,.04) 81%,
+    rgba(37,99,235,0) 100%);
+}
 .trial h3{color:#fff;font-size:clamp(24px,2.6vw,34px);position:relative;z-index:2;}
 .trial p{color:rgba(255,255,255,.66);font-size:15px;margin-top:12px;position:relative;z-index:2;}
 .trial .paylist{display:flex;flex-wrap:wrap;gap:7px;position:relative;z-index:2;}
