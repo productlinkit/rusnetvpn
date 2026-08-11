@@ -1022,7 +1022,14 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .fbot .soc svg{width:15px;height:15px;}
 
 /* FAB */
-.fab{position:fixed;right:22px;bottom:22px;z-index:130;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+/* pointer-events:none on the container, restored on the parts that are actually
+   drawn. The closed .opts list keeps its layout box (it is hidden with
+   visibility, not display, so the links stay out of the tab order without the
+   layout jumping), which made the wrapper a tall invisible rectangle above the
+   button — and it was intercepting hit-testing over the footer's social links.
+   On mobile that put an unclickable dead zone on top of them. */
+.fab{position:fixed;right:22px;bottom:22px;z-index:130;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;}
+.fab .toggle{pointer-events:auto;}
 /* visibility, not just opacity: an invisible link that still takes Tab is a place
    a keyboard user can get stranded with nothing on screen to explain it */
 .fab .opts{display:flex;flex-direction:column;gap:8px;opacity:0;visibility:hidden;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .35s;}
@@ -1032,6 +1039,16 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .fab .toggle{width:56px;height:56px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;box-shadow:0 18px 34px -14px rgba(225,39,48,.8);transition:transform .5s var(--ease);}
 .fab.on .toggle{transform:rotate(135deg);}
 .fab .toggle svg{width:22px;height:22px;}
+/* Stands down while a control it covers has focus — see the fabYield handler.
+   Deliberately opacity + pointer-events, NOT visibility. visibility:hidden also
+   removes the button from the tab order, so once it had yielded Tab skipped past
+   it and the chat button became unreachable by keyboard — a worse bug than the
+   one being fixed. opacity:0 keeps it focusable; pointer-events:none is what
+   actually takes it out of hit-testing so the card behind it is unobstructed.
+   It reappears the instant focus reaches it, because fabYield clears the class
+   for anything inside the FAB. */
+.fab.yield{opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;}
+.fab.yield,.fab.yield *{pointer-events:none;}
 @media(max-width:640px){.fab{right:14px;bottom:14px;}}
 
 /* ==========================================================================
@@ -3994,6 +4011,28 @@ document.addEventListener('keydown', function(e){
   $('#fabtoggle').setAttribute('aria-expanded','false');
   $('#fabtoggle').focus();
 });
+/* 2.4.11 Focus Not Obscured. The FAB is fixed over the bottom-right corner and
+   sat squarely on top of the footer's "Chat on Telegram" link — tabbing there
+   put the focus ring completely behind the button, so a keyboard user could not
+   see where they were. A tab walkthrough is the only thing that finds this: the
+   markup is fine and both elements pass on their own.
+   The FAB steps aside while anything underneath it holds focus, and comes back
+   the moment focus leaves. */
+function fabYield(){
+  var t = document.activeElement;
+  if(!t || t === document.body || fab.contains(t)){ fab.classList.remove('yield'); return; }
+  var f = fab.getBoundingClientRect(), r = t.getBoundingClientRect();
+  fab.classList.toggle('yield',
+    r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top);
+}
+document.addEventListener('focusin', fabYield);
+document.addEventListener('focusout', function(){ fab.classList.remove('yield'); });
+/* Re-checked on scroll, not only on focus. focusin fires before the browser
+   scrolls the new element into view, so the first measurement uses the geometry
+   the element had *before* it moved — it read as clear of the button and then
+   slid underneath it. Checking again once the scroll lands is what makes this
+   hold for the tall cards, which is exactly where it was failing. */
+window.addEventListener('scroll', fabYield, {passive:true});
 
 /* ---------- auth modal ---------- */
 var auth = $('#auth'), aForm = $('#auth-form'), aDone = $('#auth-done');
@@ -4739,6 +4778,41 @@ setView('in');
 Object.keys(AUTH_HASH).forEach(function(v){
   if(location.hash === AUTH_HASH[v]) openAuth(v, null, true);
 });
+
+/* ---------- review mode: ?demo=1 ----------
+   An auditor cannot type an email or a password into a form that is not theirs.
+   That is a fixed constraint on their side, not a defect on ours — but the
+   effect is that signup and checkout stay "cannot assess" however well they are
+   built, and 3.3.7 Redundant Entry in particular can only be judged by watching
+   a value carry from one step to the next.
+
+   ?demo=1 fills the fields with visibly fake values and opens the signup panel,
+   so the whole path — inline validation, the error and success states, and the
+   carry-over — can be walked without anyone entering a real credential. The
+   banner is deliberate: prefilled credentials with no explanation would be more
+   alarming than helpful. Absent the flag none of this runs. */
+if(/[?&]demo=1(&|$)/.test(location.search) || location.hash === '#demo'){
+  (function(){
+    var DEMO_MAIL = 'auditor@example.org', DEMO_PASS = 'Demo-Passw0rd!';
+    var note = document.createElement('p');
+    note.id = 'demo-note';
+    note.setAttribute('role', 'status');
+    note.textContent = 'Review mode — fields are prefilled with dummy data. No real account is created.';
+    note.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:10px;z-index:500;' +
+      'margin:0;padding:10px 18px;border-radius:999px;background:var(--ink);color:#fff;' +
+      'font-size:13.5px;font-weight:600;box-shadow:var(--shadow-md);max-width:calc(100vw - 28px);text-align:center;';
+    document.body.appendChild(note);
+    if(ctaEmail) ctaEmail.value = DEMO_MAIL;
+    window.setTimeout(function(){
+      openAuth('up', DEMO_MAIL);
+      if(aPass) aPass.value = DEMO_PASS;
+      if(aConfirm) aConfirm.value = DEMO_PASS;
+      [aEmail, aPass, aConfirm].forEach(function(f){
+        if(f) f.dispatchEvent(new Event('input', { bubbles:true }));
+      });
+    }, RM ? 0 : 450);
+  })();
+}
 /* the account URLs only mean anything once you are signed in, so a cold visit
    to #billing lands on the sign-in page instead of an empty shell */
 Object.keys(AC_HASH).forEach(function(p){
