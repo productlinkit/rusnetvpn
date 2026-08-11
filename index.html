@@ -1055,6 +1055,81 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    AUTH MODAL
    ========================================================================== */
 /* a full page, not a modal: it takes the whole viewport over */
+/* ==========================================================================
+   CHECKOUT
+   ==========================================================================
+   Nothing here invents a colour, a radius or a focus ring. The panel is the
+   same overlay shape as the auth card, the fields reuse .fld / .lbl / .hint /
+   .err wholesale, and the button is .btn-red — so the contrast and target-size
+   work already proved for those carries over instead of being re-litigated. */
+.co{position:fixed;inset:0;z-index:310;overflow:auto;opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s;}
+.co.is-open{opacity:1;visibility:visible;transition:opacity .3s var(--ease),visibility 0s 0s;}
+.co-scrim{position:fixed;inset:0;background:rgba(8,11,14,.62);}
+.co-card{
+  position:relative;margin:min(6vh,54px) auto;max-width:560px;width:calc(100% - 28px);
+  background:var(--card);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);
+  transform:translateY(14px);transition:transform .4s var(--ease);
+}
+.co.is-open .co-card{transform:none;}
+.co-body{padding:clamp(24px,3.4vw,40px);}
+.co-x{
+  position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;
+  display:grid;place-items:center;color:var(--body);background:var(--paper);
+}
+.co-x:hover{background:var(--paper-2);color:var(--ink);}
+.co-x svg{width:18px;height:18px;}
+#co-title{font-size:clamp(23px,2.4vw,29px);letter-spacing:-.02em;padding-right:44px;}
+.co-sub{margin-top:8px;color:var(--body);font-size:14.5px;}
+
+.co-sum{margin-top:24px;padding:20px;border-radius:var(--r-lg);background:var(--paper);border:1px solid var(--line-2);}
+.co-sum h3{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.co-rows{margin-top:14px;display:flex;flex-direction:column;gap:9px;}
+.co-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;font-size:14.5px;}
+.co-row dt{color:var(--body);}
+.co-row dd{color:var(--ink);font-weight:600;text-align:right;}
+.co-row--total{margin-top:5px;padding-top:12px;border-top:1px solid var(--line);}
+.co-row--total dt{color:var(--ink);font-weight:600;}
+.co-row--total strong{font-size:20px;letter-spacing:-.02em;}
+/* a link-looking control still has to clear the 24px floor (2.5.8) */
+.co-change{margin-top:14px;min-height:24px;padding:4px 0;font-size:13.5px;font-weight:600;color:var(--red-text);text-decoration:underline;text-underline-offset:3px;}
+
+.co-renew{margin-top:16px;padding:14px 16px;border-radius:var(--r-md);background:var(--paper-2);color:var(--body);font-size:13.5px;line-height:1.6;}
+.co-renew strong,.co-renew b{color:var(--ink);}
+
+.co-form{margin-top:22px;display:flex;flex-direction:column;gap:16px;}
+.co-pay{border:0;}
+.co-pay legend{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+.co-methods{display:flex;flex-direction:column;gap:9px;}
+.co-method{display:block;cursor:pointer;}
+.co-method input{position:absolute;opacity:0;width:0;height:0;}
+.co-method-b{
+  display:flex;flex-direction:column;gap:2px;min-height:56px;justify-content:center;
+  padding:12px 16px;border-radius:var(--r-md);border:1px solid var(--line-ui);
+  transition:border-color .2s,background .2s,box-shadow .2s;
+}
+.co-method-n{font-size:14.5px;font-weight:600;color:var(--ink);}
+.co-method-d{font-size:13px;color:var(--muted);}
+.co-method input:checked + .co-method-b{border-color:var(--ink);background:var(--paper);box-shadow:inset 0 0 0 1px var(--ink);}
+/* the ring goes on the box, because the real radio is visually hidden */
+.co-method input:focus-visible + .co-method-b{outline:var(--focus-w) solid var(--focus);outline-offset:var(--focus-gap);}
+
+.co-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.co-offsite{padding:13px 16px;border-radius:var(--r-md);background:var(--paper);color:var(--body);font-size:13.5px;line-height:1.6;}
+.co-submit{width:100%;justify-content:center;margin-top:4px;}
+.co-secure{display:flex;align-items:center;justify-content:center;gap:7px;color:var(--muted);font-size:12.5px;}
+.co-secure svg{width:14px;height:14px;flex:0 0 auto;}
+
+.co-done{text-align:center;padding:22px 0 6px;}
+.co-done-ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;background:#E9F9F0;color:var(--green-text);}
+.co-done-ic svg{width:26px;height:26px;}
+#co-done-title{font-size:23px;letter-spacing:-.02em;}
+#co-done-body{margin-top:10px;color:var(--body);font-size:14.5px;line-height:1.6;}
+#co-done-go{margin-top:22px;}
+@media(max-width:560px){
+  .co-card{margin:0;width:100%;min-height:100%;border-radius:0;}
+  .co-pair{grid-template-columns:1fr;}
+}
+
 .auth{position:fixed;inset:0;z-index:300;overflow:auto;background:var(--card);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility 0s .35s;}
 .auth.is-open{opacity:1;visibility:visible;transition:opacity .35s var(--ease),visibility 0s 0s;}
 .auth-scrim{display:none;}
@@ -2367,7 +2442,9 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
         <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg><span class="tip"><span>Dynamic switching, no slowdowns</span><button type="button" class="tip-btn" id="tipb-switch" aria-expanded="false" aria-controls="tip-switch" aria-label="What does &quot;Dynamic switching, no slowdowns&quot; mean?">?</button><span class="tip-pop" id="tip-switch" role="tooltip"><b>Moves you off a busy machine automatically.</b> If the server you are on gets crowded, the app hands you to a healthier one in the same country without dropping the session.</span></span></li>
         <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg>Best streaming experience</li>
       </ul>
-      <a href="#" class="btn btn-red" style="margin-top:34px" id="p-cta" data-auth="up">Get 1-Year Plan<span class="arw"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span></a>
+      <!-- goes to checkout, not signup: the delegated [data-auth] handler would
+           otherwise also fire and open the auth panel on top of it -->
+      <a href="#" class="btn btn-red" style="margin-top:34px" id="p-cta">Get 1-Year Plan<span class="arw"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span></a>
       <p class="fine">Auto-renewal is on by default. Turn off auto-renewal any time — you will keep access until the end of the paid period, and your card will not be charged again.</p>
     </div>
 
@@ -2694,7 +2771,12 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 </dialog>
 
 <!-- transient confirmations and failures that do not deserve a modal -->
-<div class="toasts" id="toasts"></div>
+<!-- A named region, because the container is a direct child of <body> and its
+     contents therefore belonged to no landmark — a screen-reader user moving by
+     landmark had no route to a toast that was still on screen. It stays empty
+     at rest, so the extra landmark costs nothing until something is announced.
+     The toasts themselves carry the live-region semantics. -->
+<div class="toasts" id="toasts" role="region" aria-label="Notifications"></div>
 
 <!-- ======================= AUTH MODAL ======================= -->
 <div class="auth" id="auth" role="dialog" aria-modal="true" aria-labelledby="auth-title">
@@ -2824,6 +2906,176 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
           <button type="button" class="btn btn-ghost" data-close>Back to site</button>
         </div>
       </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= CHECKOUT =======================
+     Opens on a plan choice from the pricing block. It reuses the overlay
+     contract the auth panel and the account page already follow — role="dialog",
+     aria-modal, the rest of the page inert, Esc closes and focus goes back to
+     the trigger — rather than inventing a fourth way to be a dialog.
+
+     Order of the page is deliberate. What you are buying and what it renews to
+     come before anything is typed, and the payment method is chosen before the
+     fields it governs appear, so nobody fills in a card and then discovers the
+     method they wanted was elsewhere. -->
+<div class="co" id="checkout" role="dialog" aria-modal="true" aria-labelledby="co-title">
+  <div class="co-scrim" data-co-close></div>
+  <div class="co-card">
+    <button type="button" class="co-x" id="co-x" aria-label="Close checkout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <div class="co-body">
+      <h2 id="co-title">Confirm your plan</h2>
+      <p class="co-sub">Cancel any time from your account. No charge until you press pay.</p>
+
+      <!-- ---------- what you are buying ---------- -->
+      <section class="co-sum" aria-labelledby="co-sum-h">
+        <h3 id="co-sum-h">Order summary</h3>
+        <dl class="co-rows">
+          <div class="co-row"><dt>Plan</dt><dd id="co-plan">1-Year plan</dd></div>
+          <div class="co-row"><dt>Billed</dt><dd id="co-term">every 12 months</dd></div>
+          <div class="co-row"><dt>Works out at</dt><dd id="co-per">$4.00 a month</dd></div>
+          <div class="co-row co-row--total">
+            <dt>Total payable at checkout</dt>
+            <dd><strong id="co-total">$47.99</strong></dd>
+          </div>
+        </dl>
+        <button type="button" class="co-change" id="co-change">Change plan</button>
+      </section>
+
+      <!-- Said here as well as in the pricing block. Renewal terms belong at the
+           moment of payment, not only where the price was advertised. -->
+      <p class="co-renew" id="co-renew">
+        This renews automatically at <strong id="co-renew-amt">$47.99</strong> every
+        <span id="co-renew-term">12 months</span> until you stop it. To stop it, open
+        <b>My Account → Subscription → Cancel subscription</b>. Cancelling keeps your
+        plan running until the paid period ends, and never deletes the account.
+      </p>
+
+      <form class="co-form" id="co-form" novalidate>
+        <!-- whole-attempt failure: declined card, network, gateway. Distinct from
+             a field being wrong, and announced without stealing focus. -->
+        <div class="f-alert f-alert--bad" id="co-alert" role="alert" aria-live="assertive"></div>
+
+        <!-- ---------- method chosen before the fields it controls ---------- -->
+        <fieldset class="co-pay">
+          <legend>Payment method</legend>
+          <!-- no role="radiogroup" here: <fieldset> + <legend> around native
+               radios already is the group, and naming it twice made the legend
+               compete with itself -->
+          <div class="co-methods">
+            <label class="co-method">
+              <input type="radio" name="co-method" value="card" id="co-m-card" checked>
+              <span class="co-method-b">
+                <span class="co-method-n">Card</span>
+                <span class="co-method-d">Visa, Mastercard, Mir</span>
+              </span>
+            </label>
+            <label class="co-method">
+              <input type="radio" name="co-method" value="paypal" id="co-m-paypal">
+              <span class="co-method-b">
+                <span class="co-method-n">PayPal</span>
+                <span class="co-method-d">You finish paying on PayPal</span>
+              </span>
+            </label>
+            <label class="co-method">
+              <input type="radio" name="co-method" value="crypto" id="co-m-crypto">
+              <span class="co-method-b">
+                <span class="co-method-n">Crypto</span>
+                <span class="co-method-d">BTC, ETH, USDT</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Carried from signup when we already have it — 3.3.7. Still editable,
+             because the address you buy with is not always the one you signed up
+             with, and a read-only field would be the wrong kind of helpful. -->
+        <div class="fld" id="co-fld-email">
+          <label class="lbl" for="co-email">Email address</label>
+          <span class="fieldwrap">
+            <input type="email" id="co-email" placeholder="you@email.com" autocomplete="email"
+                   spellcheck="false" inputmode="email" aria-describedby="co-hint-email co-er-email">
+            <span class="ok-tick" aria-hidden="true"></span>
+          </span>
+          <span class="hint" id="co-hint-email">Your receipt and licence key go here.</span>
+          <em class="err" id="co-er-email"></em>
+        </div>
+
+        <div class="co-card-fields" id="co-card-fields">
+          <div class="fld" id="co-fld-name">
+            <label class="lbl" for="co-name">Name on card</label>
+            <span class="fieldwrap">
+              <input type="text" id="co-name" placeholder="As printed on the card" autocomplete="cc-name"
+                     aria-describedby="co-er-name">
+              <span class="ok-tick" aria-hidden="true"></span>
+            </span>
+            <em class="err" id="co-er-name"></em>
+          </div>
+
+          <div class="fld" id="co-fld-num">
+            <label class="lbl" for="co-num">Card number</label>
+            <span class="fieldwrap">
+              <input type="text" id="co-num" placeholder="1234 5678 9012 3456" autocomplete="cc-number"
+                     inputmode="numeric" maxlength="23" aria-describedby="co-hint-num co-er-num">
+              <span class="ok-tick" aria-hidden="true"></span>
+            </span>
+            <span class="hint" id="co-hint-num">16 digits, on the front of the card.</span>
+            <em class="err" id="co-er-num"></em>
+          </div>
+
+          <div class="co-pair">
+            <div class="fld" id="co-fld-exp">
+              <label class="lbl" for="co-exp">Expiry date</label>
+              <span class="fieldwrap">
+                <input type="text" id="co-exp" placeholder="MM/YY" autocomplete="cc-exp"
+                       inputmode="numeric" maxlength="5" aria-describedby="co-hint-exp co-er-exp">
+                <span class="ok-tick" aria-hidden="true"></span>
+              </span>
+              <span class="hint" id="co-hint-exp">Month then year, like 04/28.</span>
+              <em class="err" id="co-er-exp"></em>
+            </div>
+
+            <div class="fld" id="co-fld-csc">
+              <label class="lbl" for="co-csc">Security code</label>
+              <span class="fieldwrap">
+                <input type="text" id="co-csc" placeholder="123" autocomplete="cc-csc"
+                       inputmode="numeric" maxlength="4" aria-describedby="co-hint-csc co-er-csc">
+                <span class="ok-tick" aria-hidden="true"></span>
+              </span>
+              <span class="hint" id="co-hint-csc">3 digits on the back, 4 on the front for Amex.</span>
+              <em class="err" id="co-er-csc"></em>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shown instead of the card fields. Saying where the payment finishes
+             beats letting the button be a surprise. -->
+        <p class="co-offsite" id="co-offsite" style="display:none"></p>
+
+        <button type="submit" class="btn btn-red co-submit" id="co-submit">
+          <span id="co-submit-label">Pay $47.99</span>
+          <span class="spin" aria-hidden="true"></span>
+        </button>
+        <p class="co-secure">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+          <span>Encrypted end to end. We never see your card number.</span>
+        </p>
+      </form>
+
+      <!-- success replaces the form; role="status" so it is announced without
+           interrupting, and the heading takes focus so reading starts here -->
+      <div class="co-done" id="co-done" role="status" aria-live="polite" style="display:none">
+        <span class="co-done-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6.5 9.5 17 4 11.5"/></svg>
+        </span>
+        <h3 id="co-done-title" tabindex="-1">Payment received</h3>
+        <p id="co-done-body"></p>
+        <button type="button" class="btn btn-primary" id="co-done-go">Go to my account</button>
       </div>
     </div>
   </div>
@@ -3900,6 +4152,264 @@ $$('#seg button').forEach(function(b){
   });
 });
 paintPlan(4, false);
+
+/* ==========================================================================
+   CHECKOUT
+   ==========================================================================
+   Same overlay contract as the auth panel and the account page: role="dialog",
+   the rest of the page inert, Tab trapped, Esc closes, focus returns to the
+   trigger. Written against the existing helpers — markField for validation,
+   toast for the transient confirmation, say for the live region — so the
+   behaviour a keyboard or screen-reader user gets here is the behaviour they
+   already learned everywhere else on the page. */
+var co = $('#checkout'), coForm = $('#co-form'), coAlert = $('#co-alert');
+var coEmail = $('#co-email'), coName = $('#co-name'), coNum = $('#co-num'),
+    coExp = $('#co-exp'), coCsc = $('#co-csc');
+var coCardFields = $('#co-card-fields'), coOffsite = $('#co-offsite');
+var coSubmit = $('#co-submit'), coSubmitLabel = $('#co-submit-label');
+var coDone = $('#co-done'), coLastFocus = null, coTrap = trapTab(co);
+var coPlan = 4;
+
+var CO_METHOD_COPY = {
+  paypal: 'You will finish paying on PayPal, then come straight back here. Nothing is charged until PayPal confirms.',
+  crypto: 'We will show a wallet address and the exact amount on the next step. Your plan starts once the transfer has one confirmation.'
+};
+
+function coMethod(){
+  var on = $('input[name="co-method"]:checked', coForm);
+  return on ? on.value : 'card';
+}
+/* The method governs which fields exist, so it is answered first and the form
+   changes under it — rather than collecting card details and then asking. */
+function coSyncMethod(){
+  var m = coMethod();
+  var card = m === 'card';
+  coCardFields.style.display = card ? '' : 'none';
+  coOffsite.style.display = card ? 'none' : '';
+  coOffsite.textContent = card ? '' : CO_METHOD_COPY[m];
+  var d = PLANS[coPlan];
+  coSubmitLabel.textContent = card ? 'Pay ' + money(d.price)
+    : (m === 'paypal' ? 'Continue to PayPal' : 'Continue to payment');
+}
+$$('input[name="co-method"]', coForm).forEach(function(r){
+  r.addEventListener('change', coSyncMethod);
+});
+
+function coPaint(){
+  var d = PLANS[coPlan];
+  $('#co-plan').textContent = d.n;
+  /* "3-Months" is a label, not a sentence — it has to become "3 months" before
+     it can follow the word "every" without reading like a product code */
+  var term = d.term.toLowerCase().replace('-', ' ');
+  $('#co-term').textContent = 'every ' + term;
+  $('#co-per').textContent = money(d.perMonth) + ' a month';
+  $('#co-total').textContent = money(d.price);
+  $('#co-renew-amt').textContent = money(d.price);
+  $('#co-renew-term').textContent = term;
+  coSyncMethod();
+}
+
+/* ---------- validation ----------
+   Every rule names what is wrong and what to do about it. "Invalid input" tells
+   someone the form disagrees with them but not how to proceed (3.3.3). */
+function coLuhn(s){
+  var n = s.replace(/\D/g,''), sum = 0, alt = false;
+  for(var i = n.length - 1; i >= 0; i--){
+    var v = +n[i];
+    if(alt){ v *= 2; if(v > 9) v -= 9; }
+    sum += v; alt = !alt;
+  }
+  return n.length >= 13 && n.length <= 19 && sum % 10 === 0;
+}
+var CO_FIELDS = {
+  email: { input: coEmail, fld: $('#co-fld-email'), err: $('#co-er-email'), test: function(v){
+    if(!v) return 'Enter the email address your receipt should go to.';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'That address is missing an @ or a domain — check it reads like name@example.com.';
+    return '';
+  }},
+  name: { input: coName, fld: $('#co-fld-name'), err: $('#co-er-name'), card: true, test: function(v){
+    if(!v) return 'Enter the name printed on the card.';
+    if(v.length < 2) return 'That looks too short — use the full name as printed.';
+    return '';
+  }},
+  num: { input: coNum, fld: $('#co-fld-num'), err: $('#co-er-num'), card: true, test: function(v){
+    var digits = v.replace(/\D/g,'');
+    if(!digits) return 'Enter your card number.';
+    if(digits.length < 13) return 'That is only ' + digits.length + ' digits — a card number has at least 13.';
+    if(!coLuhn(digits)) return 'That card number does not check out. Compare it with the card and try again.';
+    return '';
+  }},
+  exp: { input: coExp, fld: $('#co-fld-exp'), err: $('#co-er-exp'), card: true, test: function(v){
+    var m = v.match(/^(\d{2})\s*\/?\s*(\d{2})$/);
+    if(!v) return 'Enter the expiry date.';
+    if(!m) return 'Write the expiry as MM/YY, like 04/28.';
+    var mo = +m[1], yr = 2000 + +m[2];
+    if(mo < 1 || mo > 12) return 'There is no month ' + m[1] + ' — the first two digits are the month.';
+    var now = new Date(2026, 7);      /* fixed clock: this is a static demo */
+    if(yr < now.getFullYear() || (yr === now.getFullYear() && mo < now.getMonth() + 1))
+      return 'That date has passed. Use a card that is still in date.';
+    return '';
+  }},
+  csc: { input: coCsc, fld: $('#co-fld-csc'), err: $('#co-er-csc'), card: true, test: function(v){
+    if(!v) return 'Enter the security code.';
+    if(!/^\d{3,4}$/.test(v)) return 'The security code is 3 digits, or 4 on an Amex.';
+    return '';
+  }}
+};
+function coActiveFields(){
+  var card = coMethod() === 'card';
+  return Object.keys(CO_FIELDS).filter(function(k){ return card || !CO_FIELDS[k].card; });
+}
+function coCheck(key, force){
+  var f = CO_FIELDS[key];
+  var v = f.input.value.trim();
+  /* Nothing is marked wrong before it has been left once — validating as the
+     first character lands tells people they are failing while they type. */
+  if(!force && !f.touched) return '';
+  var msg = f.test(v);
+  markField(f.fld, f.input, f.err, msg);
+  return msg;
+}
+Object.keys(CO_FIELDS).forEach(function(k){
+  var f = CO_FIELDS[k];
+  f.input.addEventListener('blur', function(){ f.touched = true; coCheck(k, true); });
+  f.input.addEventListener('input', function(){ if(f.touched) coCheck(k, true); });
+});
+/* group the card number as it is typed — easier to check against the card, and
+   the value is stripped back to digits before anything looks at it */
+coNum.addEventListener('input', function(){
+  var d = coNum.value.replace(/\D/g,'').slice(0,19);
+  coNum.value = d.replace(/(.{4})/g,'$1 ').trim();
+});
+coExp.addEventListener('input', function(){
+  var d = coExp.value.replace(/\D/g,'').slice(0,4);
+  coExp.value = d.length > 2 ? d.slice(0,2) + '/' + d.slice(2) : d;
+});
+
+function coReset(){
+  coAlert.classList.remove('on');
+  coAlert.textContent = '';
+  Object.keys(CO_FIELDS).forEach(function(k){
+    var f = CO_FIELDS[k];
+    f.touched = false;
+    markField(f.fld, f.input, f.err, '');
+  });
+  coForm.style.display = '';
+  coDone.style.display = 'none';
+  coSubmit.classList.remove('is-busy');
+  coSubmit.disabled = false;
+}
+
+function openCheckout(i){
+  if(typeof i === 'number') coPlan = i;
+  coLastFocus = document.activeElement;
+  coReset();
+  coPaint();
+  /* 3.3.7 Redundant Entry — the address is already known from signup or from
+     the CTA band, so asking for it again is asking someone to re-key data we
+     are holding. Prefilled, still editable. */
+  if(!coEmail.value){
+    /* in priority order: the signed-in identity, then whatever was typed into
+       the signup panel, then the CTA band — the same address, wherever the
+       person happened to give it to us first */
+    var signedIn = document.body.classList.contains('is-auth') ? $('#acct-mail').textContent.trim() : '';
+    var known = signedIn ||
+                (aEmail && aEmail.value.trim()) ||
+                (ctaEmail && ctaEmail.value.trim()) || '';
+    if(known) coEmail.value = known;
+  }
+  co.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+  setPageInert(co, true);
+  document.addEventListener('keydown', coTrap);
+  window.setTimeout(function(){ $('#co-title').setAttribute('tabindex','-1'); $('#co-title').focus(); }, RM ? 0 : 120);
+  say('Checkout. ' + PLANS[coPlan].n + ', total ' + money(PLANS[coPlan].price) + '.');
+}
+function closeCheckout(){
+  co.classList.remove('is-open');
+  document.body.style.overflow = document.body.classList.contains('menu-open') ? 'hidden' : '';
+  setPageInert(co, false);
+  document.removeEventListener('keydown', coTrap);
+  if(coLastFocus && coLastFocus.focus) coLastFocus.focus();
+  coLastFocus = null;
+}
+$('#co-x').addEventListener('click', closeCheckout);
+$$('[data-co-close]').forEach(function(el){ el.addEventListener('click', closeCheckout); });
+$('#co-change').addEventListener('click', function(){
+  closeCheckout();
+  var seg = $('#seg-' + coPlan) || $('#seg button');
+  var pricing = $('#pricing');
+  if(pricing) pricing.scrollIntoView({behavior: RM ? 'auto' : 'smooth', block:'start'});
+  window.setTimeout(function(){ if(seg) seg.focus(); }, RM ? 0 : 500);
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && co.classList.contains('is-open')) closeCheckout();
+});
+
+coForm.addEventListener('submit', function(e){
+  e.preventDefault();
+  var active = coActiveFields();
+  var firstBad = null;
+  active.forEach(function(k){
+    CO_FIELDS[k].touched = true;
+    if(coCheck(k, true) && !firstBad) firstBad = CO_FIELDS[k].input;
+  });
+  if(firstBad){
+    /* Say how many, then move to the first one. A count turns "something is
+       wrong somewhere" into a finite job. */
+    var n = active.filter(function(k){ return CO_FIELDS[k].test(CO_FIELDS[k].input.value.trim()); }).length;
+    coAlert.textContent = n === 1
+      ? 'One field needs fixing before this can go through.'
+      : n + ' fields need fixing before this can go through.';
+    coAlert.classList.add('on');
+    firstBad.focus();
+    return;
+  }
+  coSubmit.classList.add('is-busy');
+  coSubmit.disabled = true;
+  coAlert.classList.remove('on');
+  coAlert.textContent = '';
+  say('Taking payment, one moment.');
+
+  window.setTimeout(function(){
+    /* Static page: a card ending 0000 fails so the decline path is reachable
+       and reviewable. Everything else succeeds. */
+    var declined = coMethod() === 'card' && /0000\s*$/.test(coNum.value.trim());
+    coSubmit.classList.remove('is-busy');
+    coSubmit.disabled = false;
+    if(declined){
+      coAlert.textContent = 'Your bank declined the payment. Nothing has been charged. Check the number and expiry, or try another card or PayPal.';
+      coAlert.classList.add('on');
+      coNum.focus();
+      return;
+    }
+    var d = PLANS[coPlan];
+    coForm.style.display = 'none';
+    coDone.style.display = '';
+    $('#co-done-body').textContent =
+      d.n + ' is active. We sent the receipt and your licence key to ' + coEmail.value.trim() +
+      '. It renews at ' + money(d.price) + ' on 11 August 2027 unless you cancel first.';
+    $('#co-done-title').focus();
+    toast('Payment received — your plan is active', 'ok');
+    if(typeof signInAs === 'function' && !document.body.classList.contains('is-auth')){
+      signInAs(coEmail.value.trim());
+    }
+  }, RM ? 0 : 1400);
+});
+$('#co-done-go').addEventListener('click', function(){
+  closeCheckout();
+  window.setTimeout(function(){ openAccount('subscription'); }, 80);
+});
+
+/* the pricing CTA is the entrance — it used to jump to signup, which asked for
+   a password before saying what anything cost at the till */
+pCta.addEventListener('click', function(e){
+  e.preventDefault();
+  openCheckout(coPlan);
+});
+$$('#seg button').forEach(function(b){
+  b.addEventListener('click', function(){ coPlan = +b.dataset.p; });
+});
 
 /* ---------- comparison table ----------
    Five plans one at a time is enough to pick from and not enough to choose

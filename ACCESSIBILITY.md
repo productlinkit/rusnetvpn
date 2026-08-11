@@ -4,8 +4,7 @@ Measured, not asserted. Every number below came from a script run against the
 built page; the scripts are described at the bottom so the run can be repeated
 and disagreed with.
 
-Last run: 10 August 2026, against `index.html` at commit `73f20bd` plus the
-fixes listed under *Lighthouse* below.
+Last run: 11 August 2026, against `index.html` including the checkout flow.
 
 ---
 
@@ -13,11 +12,14 @@ fixes listed under *Lighthouse* below.
 
 | Check | Result |
 |---|---|
-| axe-core, desktop 1440×950 | **0 violations** across 21 states |
-| axe-core, mobile 390×844 | **0 violations** across 21 states |
-| Text contrast, desktop | **0 failing** of 257 measured text nodes |
-| Text contrast, mobile | **0 failing** of 224 measured text nodes |
-| Keyboard traversal | **66 tab stops**, 0 ringless, 0 obscured, 0 undersized, 0 inert |
+| axe-core, desktop 1440×950 | **0 violations** across 26 states |
+| axe-core, mobile 390×844 | **0 violations** across 26 states |
+| Text contrast, page, desktop | **0 failing** of 245 measured text nodes |
+| Text contrast, page, mobile | **0 failing** of 221 measured text nodes |
+| Text contrast, checkout panel | **0 failing**, tightest 5.43:1 |
+| Tab traversal, desktop | **81 stops** — 0 ringless, 0 obscured, 0 off-screen, 0 order inversions |
+| Tab traversal, mobile | **73 stops** — same, all zero |
+| Overlays by keyboard | mobile menu + checkout + 3 dialogs: trap holds, Esc returns focus to trigger |
 | Lighthouse accessibility | **100** desktop, **100** mobile — no audit failing |
 | Lighthouse best practices | **96** desktop, **96** mobile |
 | Lighthouse SEO | **100** both |
@@ -27,9 +29,54 @@ Ruleset for axe: `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`,
 
 ---
 
-## 1. axe across 21 states
+## 0. Reviewing the checkout without credentials
 
-A single-page audit only ever sees the page's resting state. These 21 states are
+An auditor cannot type an email or a password into a form that is not theirs,
+which leaves signup and checkout unassessable no matter how they are built —
+3.3.7 Redundant Entry especially, since it can only be judged by watching a
+value carry from one step to the next.
+
+Load the page with **`?demo=1`** (or `#demo`). Every field is filled with
+obviously fake values, a banner says so, and the signup panel opens. Without the
+flag none of it runs.
+
+Reaching the checkout: **Pricing → pick any of the five durations → the plan
+button.** To see the decline path, use a card number ending `0000`; anything
+else that passes a Luhn check succeeds. `4242 4242 4242 4242` works.
+
+### 2.4.11 / 2.4.3 / 2.1.1 — what was measured
+
+Tab was pressed through the whole document at both viewports, waiting for
+smooth-scrolling to settle after each press, and at every stop the focused
+element was **hit-tested at five inset points** — asking the browser what is
+painted on top rather than reasoning from geometry. Overlapping the sticky
+header's box is not the same as being hidden by it: the skip link overlaps it
+deliberately and wins on z-index.
+
+Tab order was then compared against visual order. Inversions inside side-by-side
+columns are not counted — a footer's link columns are read down one column and
+then down the next, by tab order and by eye alike, and scoring that row-major
+turns every column break into a false defect. Fixed-position elements are
+excluded from the comparison because their document coordinates are not
+comparable with flowing content.
+
+Result: **0 obscured, 0 ringless, 0 resting off-screen, 0 inversions** on both
+viewports.
+
+### 3.3.7 Redundant Entry — verified, not asserted
+
+Observed directly: an address typed into the CTA band and *not* submitted is
+carried into signup; it survives switching between sign-in and sign-up; it
+survives closing and reopening the panel. At checkout the address is taken from
+the signed-in identity, else the signup panel, else the CTA band — and stays
+editable, because the address you pay with is not always the one you signed up
+with.
+
+---
+
+## 1. axe across 26 states
+
+A single-page audit only ever sees the page's resting state. These 26 states are
 each driven through the real UI before axe runs, because the page's script is an
 IIFE with nothing exposed on `window` — there is no test hook to shortcut with,
 so reaching a state in the harness proves it is reachable by a user.
@@ -42,7 +89,16 @@ faq-expanded             signin-bad-password      dialog-danger-delete
 faq-empty                cta-form-errors          dialog-warn-cancel
 plan-compare-tab         account-panel            dialog-warn-signout-all
 app-tab                  account-password-tab     mobile-sheet-open
+
+checkout-open            checkout-declined        checkout-paypal
+checkout-errors          checkout-success
 ```
+
+`checkout-success` was the first state to raise a toast, and it caught a
+pre-existing problem the other 25 could not: the toast container is a direct
+child of `<body>`, so its contents belonged to no landmark and a screen-reader
+user navigating by landmark had no route to a notification still on screen. It
+is now a named region.
 
 Starting point was **113 violation nodes**. What they were:
 
