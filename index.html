@@ -221,8 +221,10 @@ a,button,input,select,textarea,summary,details,[tabindex],[id]{
   display:inline-flex;
   align-items:center;
 }
-/* footer links have a whole column to themselves — take the full 44px */
-.fcol a{padding-block:10px;min-height:44px;}
+/* Footer links have a whole column to themselves. 9px of padding on a 21.75px
+   line box is a 40px row at every width — both the target and the unit the
+   column rhythm below is built from, rather than 44 on desktop and 40 under it. */
+.fcol a{padding-block:9px;min-height:40px;}
 /* an inline link inside running prose is exempt from 2.5.8 (the "inline"
    exception) but still gets the 24px floor, which costs nothing on a 1.6
    line-height paragraph */
@@ -1064,27 +1066,51 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 }
 /* below this the three columns are narrower than "Independent audit status" */
 @media(max-width:620px){.fgrid{grid-template-columns:1fr;gap:22px;}}
-.fgrid .about p{font-size:14.5px;color:var(--body);margin-top:18px;max-width:300px;}
-/* A column, explicitly. The 2.5.8 rule below turns these links into inline-flex
+/* ---------- one rhythm for the whole grid ----------
+   18px from a heading to the first line of text under it, in every column, at
+   every width. The links carry a 40px tap target, so 9px of that 18px is the
+   link's own padding and 9px is the heading's margin — which is why the margin
+   below reads as half the gap it produces, and why the address paragraph is
+   padded by the same 9px. Every column then starts on the same baseline and
+   ends on the same one, instead of the padded lists sitting lower than the
+   unpadded prose beside them. */
+.fgrid .about p,.fcol p{font-size:14.5px;line-height:1.6;color:var(--body);max-width:34ch;}
+.fgrid .about p{margin-top:18px;}
+.fcol p{padding-block:9px;}
+/* A column, explicitly. The 2.5.8 rule above turns these links into inline-flex
    boxes, and the markup writes them with no whitespace between the tags — so
    without a column container they butted into each other and wrapped mid-list
    instead of stacking one per row. */
 .fcol{display:flex;flex-direction:column;align-items:flex-start;}
-/* the markup headings are <h3> (h2 belongs to the sections above); this rule
-   used to say h4 and matched nothing, so they rendered at the 23px page-heading
-   size instead of as column labels. */
-.fcol h3{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:700;}
-/* padding-block and the 44px floor come from the shared 2.5.8 rule above */
-.fcol a{font-size:14.5px;color:var(--body);transition:color .25s,transform .35s var(--ease);}
-.fcol a:hover{color:var(--red-text);transform:translateX(3px);}
+/* Title, not more text. --muted and --body are a hair apart (#5C636B against
+   #4E5964), so a grey uppercase label above grey links read as two weights of
+   the same thing. The label is ink and the content under it is body: small,
+   dark and tracked says heading; larger and grey says what the heading is for.
+   (The markup headings are <h3> — h2 belongs to the sections above.) */
+.fcol h3{
+  font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink);font-weight:700;line-height:1.2;margin-bottom:9px;
+}
+/* Underlined, because in a column of 14.5px body-grey text there was nothing
+   to tell "Telegram" (a link) from "Moscow, Russia" (an address). At rest the
+   rule is a --line-3 hairline; hover and focus bring it up to the text colour,
+   so the affordance is visible before the pointer arrives and unmistakable
+   after. */
+.fcol a{
+  font-size:14.5px;line-height:1.5;color:var(--body);
+  text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--line-3);
+  transition:color .25s,text-decoration-color .25s,transform .35s var(--ease);
+}
+.fcol a:hover,.fcol a:focus-visible{color:var(--red-text);text-decoration-color:currentColor;}
+.fcol a:hover{transform:translateX(3px);}
 .fbot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:26px;}
-/* tablet and phone: the columns sit close together, so the rhythm inside them
-   comes in too. 40px is still comfortably clear of the 24px 2.5.8 minimum. */
+/* the rhythm inside a column is width-independent now — only the space around
+   the block tightens, and the brand paragraph gives up its measure once it has
+   a whole row to itself. */
 @media(max-width:860px){
   footer{padding-block:clamp(40px,5vw,56px) 30px;}
-  .fcol h3{margin-bottom:8px;}
-  .fcol a{padding-block:8px;min-height:40px;}
-  .fgrid .about p{margin-top:14px;max-width:none;}
+  .fgrid .about p{max-width:none;}
   .fbot{padding-top:20px;}
 }
 .fbot .soc{display:flex;gap:8px;}
@@ -2839,7 +2865,9 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
     </div>
     <div class="fcol">
       <h3>Address</h3>
-      <p style="font-size:14.5px;color:var(--body);line-height:1.6;max-width:260px">Office Space in Presnenskaya emb., 12. MIBC Moscow City, Federation Tower East, 123112, Moscow, Russia</p>
+      <!-- the type and the measure come from .fcol p with the rest of the grid;
+           inline here it was the one column on its own set of numbers -->
+      <p>Office Space in Presnenskaya emb., 12. MIBC Moscow City, Federation Tower East, 123112, Moscow, Russia</p>
     </div>
   </div>
   <div class="fbot">
