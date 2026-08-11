@@ -876,11 +876,18 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
   padding:4px;border-radius:999px;background:var(--paper-2);
 }
 .seg button{
-  padding:11px 6px;border-radius:999px;
+  padding:9px 6px;border-radius:999px;
   font-size:13.5px;font-weight:600;color:var(--body);text-align:center;white-space:nowrap;
   transition:background .35s,color .35s,box-shadow .35s;position:relative;
   border:1px solid transparent;min-height:44px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
 }
+/* The saving sits on the control you choose from. It used to appear only after
+   a duration was selected, or inside the comparison table behind a tab — so the
+   switcher offered five names and nothing to choose between them. */
+.segsave{font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--red-text);line-height:1.1;}
+.seg button.on .segsave{color:var(--red-text);}
+@media(max-width:560px){ .segsave{font-size:10px;} .seg button{font-size:12px;} }
 /* a white pill on the #EBEAE5 track is 1.08:1 — the selected plan was drawn by a
    drop shadow and nothing else. The outline gives the state a 3.18:1 boundary
    (1.4.11) without changing what the control looks like. */
@@ -1148,6 +1155,24 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 @media(max-width:560px){
   .co-card{margin:0;width:100%;min-height:100%;border-radius:0;}
   .co-pair{grid-template-columns:1fr;}
+}
+
+/* ---------- audit status ----------
+   Plain on purpose. Every visual cue that says "certified" — a seal, a tick, a
+   green field — would be doing the work the missing report is supposed to do. */
+.astat{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:clamp(24px,4vw,64px);align-items:start;}
+.astat h2{font-size:clamp(25px,2.7vw,36px);letter-spacing:-.025em;margin-top:16px;}
+.astat-b p{color:var(--body);font-size:15.5px;line-height:1.7;}
+.astat-b p + p{margin-top:14px;}
+.astat-b b{color:var(--ink);}
+.astat-rows{margin-top:22px;border-top:1px solid var(--line);}
+.astat-rows > div{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid var(--line);}
+.astat-rows dt{color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+.astat-rows dd{color:var(--ink);font-size:14.5px;line-height:1.6;}
+.astat .tiny{margin-top:16px;}
+@media(max-width:860px){
+  .astat{grid-template-columns:1fr;}
+  .astat-rows > div{grid-template-columns:1fr;gap:4px;}
 }
 
 .auth{position:fixed;inset:0;z-index:300;overflow:auto;background:var(--card);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility 0s .35s;}
@@ -1833,32 +1858,30 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .conn .conn-act svg{width:14px;height:14px;}
 .conn .conn-act:hover{background:var(--paper);border-color:var(--ink);}
 
+/* The AUDIT / PROOF STRIP rules lived here. Removed with the card itself: a
+   stylesheet that still dresses a component nobody renders is an invitation to
+   render it. The honest status now lives at #audit-status. */
+
 /* ==========================================================================
-   AUDIT / PROOF STRIP
+   ICONOGRAPHY — one weight, measured at the screen
    ==========================================================================
-   "Independently audited" was the flagship claim and carried no evidence. This
-   is the slot the evidence goes in: who audited it, when, and a link to the
-   report. Values are marked as placeholders in the markup, the same way the
-   prices are — the shape is real, the strings are for the client to fill. */
-/* a white card inside the navy band, so it has to reset the inherited colour —
-   .navyband sets color:#fff, which made the heading white-on-white */
-.audit{
-  display:flex;align-items:center;gap:clamp(14px,2vw,22px);flex-wrap:wrap;
-  margin-top:clamp(22px,3vw,32px);padding:clamp(18px,2.2vw,24px);
-  background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);
-  color:var(--ink);
-}
-.audit .seal{
-  width:52px;height:52px;border-radius:15px;flex:0 0 auto;
-  display:grid;place-items:center;background:var(--green-tint);color:var(--green-text);
-}
-.audit .seal svg{width:24px;height:24px;}
-.audit .meta{flex:1 1 260px;min-width:0;}
-.audit .meta b{display:block;font-size:15.5px;font-weight:700;letter-spacing:-.01em;}
-.audit .meta span{display:block;font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.5;}
-.audit .meta span em{font-style:normal;color:var(--body);font-weight:600;}
-.audit .btn{flex:0 0 auto;}
-@media(max-width:560px){.audit{gap:14px;}.audit .btn{width:100%;justify-content:center;}}
+   Every icon already carried stroke-width="1.8", which looked like a unified
+   set and was not one. stroke-width is expressed in viewBox units, so the
+   thickness that actually reaches the screen is the attribute times
+   (rendered size / viewBox size). The set mixes 16-unit and 24-unit artboards
+   at sizes from 11px to 29px, and measuring what was drawn found sixteen
+   distinct weights from 1.05px to 2.07px — a 1.97x spread. The 16-unit icons
+   drew almost twice as heavy as the 24-unit ones sitting beside them.
+
+   vector-effect:non-scaling-stroke takes the viewBox transform out of the
+   stroke, so the number below is the number of pixels drawn, at every size and
+   on both artboards. 1.45 because that is where most of the set already sat —
+   the correction moves the outliers, not the whole page.
+
+   Targets svg[stroke-width] only, so filled marks like the wordmark and the
+   store badges, which have no stroke, are untouched. */
+svg[stroke-width]{ stroke-width:1.45; }
+svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
 
 /* ==========================================================================
    PLAN COMPARISON
@@ -2121,8 +2144,8 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
       <span class="vert"><span>Strict No-Logs Policy</span></span>
       <span class="full">
         <h3>Strict No-Logs Policy</h3>
-        <p>RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.</p>
-        <span class="pill"><span>Independently audited</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+        <p>RusVPN is committed to independent, no-log auditing — that audit is in progress. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.</p>
+        <span class="pill"><span>Audit in progress</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
       </span>
     </button>
 
@@ -2187,7 +2210,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v7"/><path d="M7.5 6.5a7 7 0 1 0 9 0"/></svg></span>
       <h3>No-Log VPN</h3>
       <p>We are a no-log VPN meaning that we don’t store any of your traffic logs.</p>
-      <span class="more"><div><p>RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.</p></div></span>
+      <span class="more"><div><p>RusVPN is committed to independent, no-log auditing — that audit is in progress. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.</p></div></span>
     </button>
 
     <button class="tile" data-t>
@@ -2337,27 +2360,14 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
   </div>
 
   <!-- ---------- PROOF, not just the claim ----------
-       "Independently audited" is the strongest thing this page says and the only
-       thing it says without evidence. This slot is the evidence: who, when, what
-       scope, and a link to the report itself.
-
-       PARKED until the real audit details exist — showing "[auditor name]" to a
-       visitor is worse than showing nothing, because a badge that cannot be
-       checked reads as a claim someone hoped you would not check.
-
-       TO PUBLISH: delete the `hidden` below, then fill in the three values —
-       the auditor, the report date, and the href on "Read the report". All three
-       are marked data-audit="…". If the audit never happens, delete this block
-       and soften the "independently audited" wording in the rail card and the
-       FAQ, which both assert it as fact. -->
-  <div class="audit up" hidden>
-    <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l7 3v5.5c0 4.3-3 8-7 9.5-4-1.5-7-5.2-7-9.5V6l7-3z"/><path d="M9.3 12l1.9 1.9L15 10"/></svg></span>
-    <span class="meta">
-      <b>No-logs policy, independently audited</b>
-      <span>Assessed by <em data-audit="firm">[auditor name]</em> · report dated <em data-audit="date">[dd mmm yyyy]</em> · scope: connection, traffic and DNS logging across all production regions.</span>
-    </span>
-    <a href="#" class="btn btn-white btn-sm" data-audit="link"><span>Read the report</span><span class="arw"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12L12 4M6 4h6v6"/></svg></span></a>
-  </div>
+       The parked "independently audited" seal that used to sit here is gone. A
+       card built to display an auditor's name, a report date and a link to the
+       report is the right shape for evidence — and the wrong thing to keep in
+       the markup while all three are placeholders, because the only way it ever
+       ships is by someone deleting one attribute. The claim it carried now
+       reads as the status it actually has, in every place it appeared, and the
+       status itself is stated once at #audit-status and linked from the footer.
+       When there is a real report, that section is where it goes. -->
  </div>
 </section>
 
@@ -2390,7 +2400,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
       <div id="appcopy" role="tabpanel" aria-labelledby="apptab-0" tabindex="0">
       <ul class="applist">
         <li><span class="tick"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span><span>We are a no-log VPN meaning that we don’t store any of your traffic logs.</span></li>
-        <li><span class="tick"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span><span>RusVPN is one of the first independently audited no-log VPN providers in the industry.</span></li>
+        <li><span class="tick"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span><span>RusVPN is committed to independent, no-log auditing — that audit is in progress.</span></li>
         <li><span class="tick"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span><span>No third-party access. All data is securely managed from Moscow, free from Western interference.</span></li>
       </ul>
       </div>
@@ -2470,7 +2480,9 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
       <!-- data-buy, like every other purchase CTA. One delegated handler owns
            them all, so a new buy button cannot be added without the behaviour. -->
       <a href="#" class="btn btn-red" style="margin-top:34px" id="p-cta" data-buy>Get 1-Year Plan<span class="arw"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span></a>
-      <p class="fine">Auto-renewal is on by default. Turn off auto-renewal any time — you will keep access until the end of the paid period, and your card will not be charged again.</p>
+      <!-- The billing term people actually ask about, explained where they read
+           it rather than only in the FAQ they would have to go looking for. -->
+      <p class="fine"><span class="tip"><span>Auto-renewal</span><button type="button" class="tip-btn" id="tipb-renew" aria-expanded="false" aria-controls="tip-renew" aria-label="What does &quot;auto-renewal&quot; mean?">?</button><span class="tip-pop" id="tip-renew" role="tooltip"><b>Your plan continues at the same price until you stop it.</b> We charge the card on file on the renewal date. Turning it off keeps your access to the end of the period you already paid for — it is not a cancellation of the current term.</span></span> is on by default. Turn off auto-renewal any time — you will keep access until the end of the paid period, and your card will not be charged again.</p>
     </div>
 
     <div class="trial">
@@ -2558,7 +2570,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
           <span class="qt">Do you keep any logs?</span>
           <span class="qc"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5"/></svg></span>
         </button>
-        <div class="qinline" id="qans-1" role="region" aria-labelledby="qbtn-1"><div><p>RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever. We are a no-log VPN meaning that we don’t store any of your traffic logs.</p></div></div>
+        <div class="qinline" id="qans-1" role="region" aria-labelledby="qbtn-1"><div><p>RusVPN is committed to independent, no-log auditing — that audit is in progress. We do no data collection, no logging of activity, and no sharing or selling any of your data ever. We are a no-log VPN meaning that we don’t store any of your traffic logs.</p></div></div>
       </div>
 
       <div class="qrow" data-cat="Global Coverage">
@@ -2727,6 +2739,42 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 </main>
 
 <!-- ======================= FOOTER ======================= -->
+<!-- ======================= AUDIT STATUS =======================
+     A destination, so the footer link can point at something instead of "#".
+     Deliberately a plain strip and not a badge: a seal is what you earn once
+     there is a report, and dressing a pending audit up as one is the exact
+     move this section exists to stop. It says what has been done, what has
+     not, and when — and when a report exists it replaces this copy rather
+     than being bolted on somewhere else. -->
+<section class="wrap sec-tight" id="audit-status" aria-labelledby="audit-status-h">
+  <div class="astat">
+    <div class="astat-t">
+      <span class="eyebrow"><i class="dot"></i><span>Transparency</span></span>
+      <h2 id="audit-status-h">Independent audit — status</h2>
+    </div>
+    <div class="astat-b">
+      <p>
+        <b>No independent audit has been completed yet.</b> We run RusVPN as a
+        no-log service — no traffic logs, no DNS query logs, no connection
+        timestamps tied to an account — and we have committed to having that
+        claim examined by an outside firm rather than asking you to take our
+        word for it.
+      </p>
+      <p>
+        Until a report exists and is published here in full, we do not describe
+        the service as “audited”. A claim you cannot check is not evidence, and
+        a seal with nothing behind it is worth less than saying so plainly.
+      </p>
+      <dl class="astat-rows">
+        <div><dt>Scope to be assessed</dt><dd>Connection, traffic and DNS logging across all production regions</dd></div>
+        <div><dt>Auditor</dt><dd>Not yet appointed</dd></div>
+        <div><dt>Report</dt><dd>Will be published here in full, including any findings against us</dd></div>
+      </dl>
+      <p class="tiny">Last reviewed 11 August 2026.</p>
+    </div>
+  </div>
+</section>
+
 <footer class="wrap">
   <div class="fgrid">
     <div class="about">
@@ -2741,7 +2789,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
     </div>
     <div class="fcol">
       <h3>Customer service</h3>
-      <a href="#faq">FAQ</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
+      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
     </div>
     <div class="fcol">
       <h3>Address</h3>
@@ -3019,7 +3067,15 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 
         <!-- Carried from signup when we already have it — 3.3.7. Still editable,
              because the address you buy with is not always the one you signed up
-             with, and a read-only field would be the wrong kind of helpful. -->
+             with, and a read-only field would be the wrong kind of helpful.
+
+             Every .err slot below carries role="alert" aria-live="polite".
+             aria-describedby alone only speaks when focus reaches the field, so
+             a message written into a field you have already left — which is
+             exactly when blur validation writes them — was silent. The slots
+             are empty at rest, so nothing is announced until one is filled;
+             polite rather than assertive because a correction is not an
+             interruption, and focus is never moved out from under anyone. -->
         <div class="fld" id="co-fld-email">
           <label class="lbl" for="co-email">Email address</label>
           <span class="fieldwrap">
@@ -3028,7 +3084,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
             <span class="ok-tick" aria-hidden="true"></span>
           </span>
           <span class="hint" id="co-hint-email">Your receipt and licence key go here.</span>
-          <em class="err" id="co-er-email"></em>
+          <em class="err" id="co-er-email" role="alert" aria-live="polite"></em>
         </div>
 
         <div class="co-card-fields" id="co-card-fields">
@@ -3039,7 +3095,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
                      aria-describedby="co-er-name">
               <span class="ok-tick" aria-hidden="true"></span>
             </span>
-            <em class="err" id="co-er-name"></em>
+            <em class="err" id="co-er-name" role="alert" aria-live="polite"></em>
           </div>
 
           <div class="fld" id="co-fld-num">
@@ -3050,7 +3106,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
               <span class="ok-tick" aria-hidden="true"></span>
             </span>
             <span class="hint" id="co-hint-num">16 digits, on the front of the card.</span>
-            <em class="err" id="co-er-num"></em>
+            <em class="err" id="co-er-num" role="alert" aria-live="polite"></em>
           </div>
 
           <div class="co-pair">
@@ -3062,7 +3118,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
                 <span class="ok-tick" aria-hidden="true"></span>
               </span>
               <span class="hint" id="co-hint-exp">Month then year, like 04/28.</span>
-              <em class="err" id="co-er-exp"></em>
+              <em class="err" id="co-er-exp" role="alert" aria-live="polite"></em>
             </div>
 
             <div class="fld" id="co-fld-csc">
@@ -3073,7 +3129,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
                 <span class="ok-tick" aria-hidden="true"></span>
               </span>
               <span class="hint" id="co-hint-csc">3 digits on the back, 4 on the front for Amex.</span>
-              <em class="err" id="co-er-csc"></em>
+              <em class="err" id="co-er-csc" role="alert" aria-live="polite"></em>
             </div>
           </div>
         </div>
@@ -4049,7 +4105,7 @@ var SHOT = {
 var APP = [
   { m:'connected', l:'tooltip', r:'freehome',
     c:['We are a no-log VPN meaning that we don’t store any of your traffic logs.',
-       'RusVPN is one of the first independently audited no-log VPN providers in the industry.',
+       'RusVPN is committed to independent, no-log auditing — that audit is in progress.',
        'No third-party access. All data is securely managed from Moscow, free from Western interference.'] },
   { m:'servers', l:'serversPrem', r:'freeServers',
     c:['700+ servers worldwide, spanning North America, South America, Europe, Asia, Africa, and Oceania.',
@@ -4169,6 +4225,16 @@ function paintPlan(i, announceIt){
         ', ' + money(d.perMonth) + ' a month' + (d.savePct ? ', saving ' + d.savePct + ' percent' : ''));
   }
 }
+/* Written from savePct rather than typed into the markup, so the switcher can
+   never advertise a discount the price no longer supports. */
+$$('#seg button').forEach(function(b){
+  var d = PLANS[+b.dataset.p];
+  if(!d || !d.savePct) return;
+  var s = document.createElement('span');
+  s.className = 'segsave';
+  s.textContent = 'Save ' + d.savePct + '%';
+  b.appendChild(s);
+});
 $$('#seg button').forEach(function(b){
   b.addEventListener('click', function(){
     $$('#seg button').forEach(function(x){ x.classList.remove('on'); });
