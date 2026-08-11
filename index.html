@@ -182,11 +182,31 @@ button{background:none;border:0;cursor:pointer;}
    round a whole page section reads as an error box, not as "you are here". The
    move itself is the affordance, and it is announced. */
 .ac-panel:focus,.ac-panel:focus-visible,
+#top:focus,#top:focus-visible,
 #done-title:focus,#done-title:focus-visible{ outline:none; }
 
-/* 2.4.11 — a sticky header must not sit on top of the thing you just tabbed to */
-:root{ scroll-padding-top:96px; }
-@media(max-width:640px){ :root{ scroll-padding-top:76px; } }
+/* 2.4.11 Focus Not Obscured — reserve the sticky header's height on anything
+   the browser scrolls into view, so a control never comes to rest underneath it.
+
+   scroll-margin on the target, not scroll-padding on the container. The two do
+   the same job for the document scroller and must not both be set or they add
+   up, but scroll-padding only ever applies to the scroller it is written on —
+   and four things here scroll inside themselves: the auth panel, the account
+   page, the checkout panel and the mobile sheet. Nothing the browser scrolls
+   into view inside those was getting any reservation at all.
+
+   Those overlays have no sticky header of their own, so reserving 98px inside
+   them would only shove their content down for nothing. --scroll-safe is a
+   custom property, and custom properties inherit: the overlays redeclare it and
+   everything inside them picks up the smaller value without repeating the
+   selector list. The header measures 82px on desktop and 76px on mobile; the
+   remainder is the 3px ring, its 3px offset, and room to read the edge. */
+:root{ --scroll-safe:98px; }
+#auth,#account,#checkout,#sheet,.dlg{ --scroll-safe:16px; }
+a,button,input,select,textarea,summary,details,[tabindex],[id]{
+  scroll-margin-top:var(--scroll-safe);
+}
+@media(max-width:640px){ :root{ --scroll-safe:88px; } }
 
 /* ==========================================================================
    TARGET SIZE — WCAG 2.5.8 (24×24 minimum)
@@ -1986,7 +2006,12 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 </nav>
 
 <!-- ======================= HERO ======================= -->
-<main id="top">
+<!-- tabindex="-1" so the skip link can actually land here. Without it the
+     fragment scrolled the page but focus fell back to <body>, so the next Tab
+     returned to the header — the link announced itself, moved the view, and
+     skipped nothing. A container is not focusable by default; making it a
+     programmatic target is the whole mechanism behind 2.4.1. -->
+<main id="top" tabindex="-1">
 <section class="hero wrap" aria-label="Hero section">
   <div class="hero-top">
     <div class="up">

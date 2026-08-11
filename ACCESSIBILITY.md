@@ -63,6 +63,43 @@ comparable with flowing content.
 Result: **0 obscured, 0 ringless, 0 resting off-screen, 0 inversions** on both
 viewports.
 
+### How the reservation is made
+
+`scroll-margin-top` on the targets, **not** `scroll-padding-top` on the
+container. The two do the same job for the document scroller and must never both
+be set — they add up — but `scroll-padding` only applies to the scroller it is
+written on, and four things here scroll inside themselves: the auth panel, the
+account page, the checkout panel and the mobile sheet. Nothing scrolled into
+view inside those was getting any reservation at all.
+
+Those overlays have no sticky header of their own, so reserving the full height
+inside them would only shove their content down. `--scroll-safe` is a custom
+property and custom properties inherit, so the overlays redeclare it once and
+everything inside them picks up the smaller value:
+
+| Scope | Reservation |
+|---|---|
+| document | 98px desktop, 88px mobile (header 82 / 76, plus ring, offset and margin) |
+| `#auth`, `#account`, `#checkout`, `#sheet`, `.dlg` | 16px |
+
+Verified by walking all eight in-page anchors at both viewports and measuring
+where each target came to rest after the smooth scroll settled, then focusing a
+sample of off-screen controls and measuring the same thing.
+
+### The skip link was not skipping
+
+That anchor walk turned up a real one. `<main id="top">` had no `tabindex="-1"`,
+so activating "Skip to main content" scrolled the page but left focus on
+`<body>` — the next Tab went straight back into the header. The link announced
+itself, moved the view, and skipped nothing, which is the failure mode 2.4.1
+exists to prevent and the one thing an automated scan cannot see, because the
+markup is perfectly correct.
+
+`main` is a programmatic focus target now, with no ring: a 3px outline around
+the entire page body reads as an error, and the move itself is the feedback.
+Tab after the skip link now lands on "Subscribe Now" — the first control inside
+`main` — at both viewports.
+
 ### 3.3.7 Redundant Entry — verified, not asserted
 
 Observed directly: an address typed into the CTA band and *not* submitted is
