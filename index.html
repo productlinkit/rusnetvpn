@@ -118,6 +118,23 @@
   --space-1:4px;  --space-2:8px;  --space-3:12px; --space-4:16px;
   --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px;
   --space-9:48px; --space-10:64px;
+
+  /* ---------- FLUID PADDING ----------
+     Thirty-three fluid paddings across seventeen distinct ramps: the same
+     one-decision-per-component drift the heading ramps had, in the property
+     that decides how much room everything gets.
+
+     Three of the six steps are lifted unchanged from ramps the page already
+     repeats — 44 on the three cards, 84 on the section band, 132 on the
+     section rhythm — so most of these declarations keep the exact value they
+     had and only stop restating it. The scale was fitted to the page rather
+     than the page rounded into the scale. */
+  --pad-1:clamp(18px,2.2vw,26px);  /* table rows, list items */
+  --pad-2:clamp(20px,2.6vw,30px);  /* small cards and tiles */
+  --pad-3:clamp(26px,3vw,44px);    /* the standard card */
+  --pad-4:clamp(28px,3.6vw,56px);  /* large panels */
+  --pad-5:clamp(56px,6vw,84px);    /* section blocks */
+  --pad-6:clamp(72px,9vw,132px);   /* the page's own rhythm */
   /* 20 and 40 are in the scale because the page already uses them and they are
      already multiples of the base. A scale that omits a step its own layout
      depends on does not tidy that step, it renames it as an exception. */
@@ -329,9 +346,9 @@ a,button,input,select,textarea,summary,details,[tabindex],[id]{
 .skip:focus{transform:none;}
 
 .wrap{max-width:calc(var(--maxw) + var(--pad)*2);margin:0 auto;padding-inline:var(--pad);}
-.sec{padding-block:clamp(72px,9vw,132px);}
-.sec-tight{padding-block:clamp(56px,6vw,84px);}
-.sec-cta{padding-bottom:clamp(56px,6vw,90px);}
+.sec{padding-block:var(--pad-6);}
+.sec-tight{padding-block:var(--pad-5);}
+.sec-cta{padding-bottom:var(--pad-5);}
 
 /* ==========================================================================
    TYPE
@@ -672,7 +689,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 
 /* stats */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-2);border-radius:var(--r-lg);overflow:hidden;margin-top:14px;}
-.stats .st{background:var(--paper);padding:26px clamp(16px,2vw,30px);}
+.stats .st{background:var(--paper);padding:26px var(--pad-2);}
 .stats .n{font-size:var(--fs-d2);font-weight:700;letter-spacing:-.04em;line-height:1;}
 .stats .n em{font-style:normal;color:var(--red);}
 .stats .l{font-size:var(--fs-200);color:var(--body);margin-top:8px;}
@@ -724,7 +741,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 }
 .rcard.is-open .vert{opacity:0;pointer-events:none;}
 .rcard .full{
-  position:absolute;z-index:4;left:0;bottom:0;padding:clamp(20px,2.2vw,32px);
+  position:absolute;z-index:4;left:0;bottom:0;padding:var(--pad-2);
   width:min(430px,86%);opacity:0;transform:translateY(14px);pointer-events:none;
   transition:opacity .5s .12s var(--ease),transform .6s .12s var(--ease);
 }
@@ -775,7 +792,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
    ========================================================================== */
 .bento{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);}
 .tile{
-  position:relative;background:var(--card);border-radius:var(--r-lg);padding:clamp(22px,2.2vw,30px);
+  position:relative;background:var(--card);border-radius:var(--r-lg);padding:var(--pad-2);
   text-align:left;border:1px solid var(--line-2);overflow:hidden;
   transition:transform .55s var(--ease),opacity .45s var(--ease),box-shadow .55s var(--ease),border-color .4s;
 }
@@ -846,7 +863,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .rows{border-top:1px solid rgba(255,255,255,.16);}
 .rowi{
   display:grid;grid-template-columns:1.4fr .8fr .7fr 46px;align-items:center;gap:var(--space-5);
-  padding:clamp(18px,2vw,26px) 6px;border-bottom:1px solid rgba(255,255,255,.13);
+  padding:var(--pad-1) 6px;border-bottom:1px solid rgba(255,255,255,.13);
   transition:padding-left .5s var(--ease),background .4s;position:relative;
 }
 .rowi:hover{padding-left:18px;}
@@ -875,7 +892,10 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 /* ==========================================================================
    APPS
    ========================================================================== */
-.apps{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(40px,5vw,84px) clamp(24px,3.6vw,72px);position:relative;overflow:hidden;}
+/* the horizontal ramp stays off the scale: this card is deliberately taller
+   than it is wide in its padding (84 against 72), and giving both axes the
+   same token flattens that into a square inset the card was never drawn with */
+.apps{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:var(--pad-5) clamp(24px,3.6vw,72px);position:relative;overflow:hidden;}
 /* Same fault the trial card had, and the same fix. A `circle` in a box 60%
    wide: farthest-corner sizing measured the radius off the box's long diagonal,
    so the transparent stop sat well outside the box's own half-width and the red
@@ -965,7 +985,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 @media(max-width:560px){.phone.p-side{display:none;}.phone.p-main{width:min(64%,220px);transform:none;}}
 
 /* pros & cons */
-.pc{margin-top:clamp(34px,4vw,58px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:clamp(22px,2.6vw,34px);position:relative;z-index:2;}
+.pc{margin-top:clamp(34px,4vw,58px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:var(--pad-2);position:relative;z-index:2;}
 .pc-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-5);flex-wrap:wrap;margin-bottom:24px;}
 .pc-head h3{color:#fff;}
 .pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,2.4vw,34px);}
@@ -985,7 +1005,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .band{position:relative;border-radius:var(--r-xl);overflow:hidden;min-height:clamp(300px,34vw,420px);display:flex;align-items:flex-end;}
 .band .media{position:absolute;inset:0;}
 .band .veil{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(14,18,22,.15),rgba(14,18,22,.86));}
-.band .inner{position:relative;z-index:3;padding:clamp(26px,3.4vw,52px);color:#fff;max-width:620px;}
+.band .inner{position:relative;z-index:3;padding:var(--pad-4);color:#fff;max-width:620px;}
 .band h3{font-size:var(--fs-h3);color:#fff;margin-bottom:12px;}
 .band p{color:rgba(255,255,255,.72);font-size:var(--fs-400);}
 .band .addr{margin-top:20px;display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-200);color:rgba(255,255,255,.6);}
@@ -1052,7 +1072,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
   /* in the flow now that it has room on its row, so it stops overlapping */
   .seg button .best{position:static;display:inline-block;vertical-align:1px;}
 }
-.pcard{background:var(--card);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);border:1px solid var(--line-2);display:flex;flex-direction:column;}
+.pcard{background:var(--card);border-radius:var(--r-xl);padding:var(--pad-3);border:1px solid var(--line-2);display:flex;flex-direction:column;}
 .pcard .amt{display:flex;align-items:flex-start;gap:var(--space-2);margin-top:26px;}
 .pcard .amt .cur{font-size:26px;font-weight:600;margin-top:10px;color:var(--body);}
 .pcard .amt .val{font-size:var(--fs-d1);font-weight:700;letter-spacing:-.05em;line-height:.92;}
@@ -1121,7 +1141,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
    2.74:1. It is the sentence that tells you your card gets charged again, so it
    is the last thing on the page that should be hard to read. */
 .pcard .fine{font-size:var(--fs-200);color:var(--muted);margin-top:14px;line-height:1.55;max-width:52ch;}
-.trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-6);position:relative;overflow:hidden;}
+.trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:var(--pad-3);display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-6);position:relative;overflow:hidden;}
 /* The glow was a `circle` inside a 400x722 box. farthest-corner sizing put its
    transparent stop at a ~268px radius while the box's own half-width was
    200px — so the wash was still around .09 alpha where the box ended and got
@@ -1169,7 +1189,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .qsplit{display:grid;grid-template-columns:.86fr 1.14fr;gap:clamp(14px,2vw,26px);align-items:stretch;}
 .qnav{border-top:1px solid var(--line);}
 .qrow{border-bottom:1px solid var(--line);}
-.qitem{position:relative;width:100%;display:grid;grid-template-columns:38px 1fr 22px;align-items:center;gap:var(--space-3);text-align:left;padding:clamp(16px,1.7vw,21px) 0;transition:padding-left .45s var(--ease);}
+.qitem{position:relative;width:100%;display:grid;grid-template-columns:38px 1fr 22px;align-items:center;gap:var(--space-3);text-align:left;padding:var(--pad-1) 0;transition:padding-left .45s var(--ease);}
 .qitem::before{content:"";position:absolute;left:0;top:22%;height:56%;width:2px;background:var(--red);transform:scaleY(0);transition:transform .45s var(--ease);}
 .qitem .qn{font-size:var(--fs-100);font-weight:700;letter-spacing:.08em;color:var(--muted);transition:color .3s;}
 .qitem .qt{font-size:clamp(15.5px,1.35vw,18px);font-weight:600;letter-spacing:-.02em;color:var(--body);line-height:1.35;transition:color .3s;}
@@ -1182,7 +1202,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .qrow.is-on .qt{color:var(--ink);font-weight:700;}
 .qrow.is-on .qc{opacity:1;transform:none;color:var(--red-text);}
 
-.qpanel{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);display:flex;flex-direction:column;}
+.qpanel{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-xl);padding:var(--pad-3);display:flex;flex-direction:column;}
 .qpanel .ghost{position:absolute;top:-26px;right:10px;font-size:clamp(120px,15vw,210px);font-weight:800;letter-spacing:-.06em;color:var(--ink);opacity:.035;line-height:1;pointer-events:none;user-select:none;}
 .qp-top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);position:relative;z-index:2;}
 .qp-count{font-size:var(--fs-100);font-weight:700;letter-spacing:.12em;color:var(--muted);}
@@ -1191,7 +1211,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .qpanel.swap .qp-body{opacity:0;transform:translateY(10px);}
 .qp-q{font-size:var(--fs-h4);font-weight:700;letter-spacing:-.03em;line-height:1.12;}
 .qp-a{margin-top:16px;font-size:clamp(15px,1.2vw,16.5px);color:var(--body);line-height:1.68;max-width:60ch;}
-.qp-foot{position:relative;z-index:2;margin-top:auto;padding-top:clamp(26px,2.8vw,38px);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;}
+.qp-foot{position:relative;z-index:2;margin-top:auto;padding-top:var(--pad-3);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;}
 .qp-foot .hint{font-size:var(--fs-300);color:var(--muted);}
 .qinline{display:none;}
 @media(max-width:880px){
@@ -1209,7 +1229,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 /* ==========================================================================
    CTA + FOOTER
    ========================================================================== */
-.cta{position:relative;border-radius:var(--r-xl);overflow:hidden;color:#fff;padding:clamp(40px,5.4vw,92px) clamp(22px,3.4vw,64px);text-align:center;}
+.cta{position:relative;border-radius:var(--r-xl);overflow:hidden;color:#fff;padding:var(--pad-5) var(--pad-4);text-align:center;}
 .cta .media{position:absolute;inset:0;}
 .cta .media img{filter:saturate(.5) brightness(.45);}
 /* stands in for the photo until one is dropped in: navy, dot grid, red glow */
@@ -1255,7 +1275,7 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .cta .row span{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-200);color:rgba(255,255,255,.55);}
 .cta .row svg{width:14px;height:14px;color:var(--red-2);}
 
-footer{padding-block:clamp(50px,5vw,80px) 40px;}
+footer{padding-block:var(--pad-5) 40px;}
 .fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:var(--space-8);padding-bottom:44px;border-bottom:1px solid var(--line);}
 /* Two-up put the short brand block beside the tallest link column and left a
    column-height hole under it. The brand takes the full row instead and the
@@ -1309,7 +1329,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    the block tightens, and the brand paragraph gives up its measure once it has
    a whole row to itself. */
 @media(max-width:860px){
-  footer{padding-block:clamp(40px,5vw,56px) 30px;}
+  footer{padding-block:var(--pad-4) 30px;}
   .fgrid .about p{max-width:none;}
   .fbot{padding-top:20px;}
 }
@@ -1368,7 +1388,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
   transform:translateY(14px);transition:transform .4s var(--ease);
 }
 .co.is-open .co-card{transform:none;}
-.co-body{padding:clamp(24px,3.4vw,40px);}
+.co-body{padding:var(--pad-3);}
 .co-x{
   position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;
   display:grid;place-items:center;color:var(--body);background:var(--paper);
@@ -1445,10 +1465,10 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    the same ground: section padding runs on the outside of the pair only, and a
    hairline marks where the halves meet. Each half stays its own <section> so
    both keep a landmark and both footer anchors land on a real region. */
-.sec-pair-a{padding-block:clamp(56px,6vw,84px) 0;}
+.sec-pair-a{padding-block:var(--pad-5) 0;}
 .sec-pair-m{padding-block:0;}
-.sec-pair-b{padding-block:0 clamp(56px,6vw,84px);}
-.sec-pair-m .astat,.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:clamp(30px,3.6vw,46px);border-top:1px solid var(--line);}
+.sec-pair-b{padding-block:0 var(--pad-5);}
+.sec-pair-m .astat,.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:var(--pad-3);border-top:1px solid var(--line);}
 /* every half after the first carries no eyebrow — the band is labelled once, at
    the top — so those headings lose the offset that exists only to clear one */
 .sec-pair-m .astat h2,.sec-pair-b .astat h2{margin-top:0;}
@@ -1469,7 +1489,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 
 .auth-side{
   position:relative;background:var(--navy);color:#fff;overflow:hidden;
-  padding:clamp(28px,3.6vw,64px);display:flex;flex-direction:column;gap:var(--space-6);
+  padding:var(--pad-4);display:flex;flex-direction:column;gap:var(--space-6);
 }
 .auth-side::before{content:"";position:absolute;inset:0;z-index:2;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;}
 .auth-side::after{content:"";position:absolute;z-index:2;right:-30%;bottom:-30%;width:80%;height:80%;background:radial-gradient(circle,rgba(225,39,48,.24),transparent 62%);}
@@ -1488,13 +1508,13 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 @media(min-width:821px){.auth-side{position:sticky;top:0;height:100vh;height:100dvh;}}
 @media(max-width:820px){.auth-side{display:none;}}
 
-.auth-main{position:relative;padding:clamp(20px,2.4vw,40px);display:flex;flex-direction:column;}
+.auth-main{position:relative;padding:var(--pad-3);display:flex;flex-direction:column;}
 .auth-top{display:flex;align-items:center;gap:var(--space-4);}
 .auth-top .brand{display:none;}
 .auth-back{display:inline-flex;align-items:center;gap:var(--space-2);margin-left:auto;padding:11px 18px;border-radius:999px;border:1px solid var(--line-ui);font-size:var(--fs-200);font-weight:600;color:var(--body);transition:color .3s,background .3s,border-color .3s,gap .3s var(--ease);}
 .auth-back:hover{color:var(--ink);background:var(--paper);border-color:var(--ink);gap:var(--space-3);}
 .auth-back svg{width:13px;height:13px;}
-.auth-inner{width:100%;max-width:436px;margin:auto;padding-block:clamp(26px,4vh,56px);opacity:0;transform:translateY(12px);transition:opacity .5s .1s var(--ease),transform .6s .1s var(--ease);}
+.auth-inner{width:100%;max-width:436px;margin:auto;padding-block:var(--pad-4);opacity:0;transform:translateY(12px);transition:opacity .5s .1s var(--ease),transform .6s .1s var(--ease);}
 .auth.is-open .auth-inner{opacity:1;transform:none;}
 @media(max-width:820px){.auth-top .brand{display:flex;}.auth-inner{margin-top:clamp(20px,6vh,52px);}}
 .auth-tabs{display:inline-flex;align-self:flex-start;gap:var(--space-1);padding:4px;border-radius:999px;background:var(--paper-2);margin-bottom:24px;}
@@ -1594,7 +1614,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 
 .ac-top{
   position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:var(--space-4);
-  padding:16px clamp(20px,4vw,48px);background:rgba(243,242,239,.86);
+  padding:16px var(--pad-3);background:rgba(243,242,239,.86);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line-2);
 }
@@ -1608,7 +1628,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    tracks take their automatic minimum from content, and the tab strip reports
    the full width of all seven chips, dragging the whole page wider than the
    phone. the strip is meant to scroll inside its column, not stretch it. */
-.ac-body{display:grid;grid-template-columns:minmax(0,268px) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start;padding-block:clamp(26px,4vw,48px) 80px;}
+.ac-body{display:grid;grid-template-columns:minmax(0,268px) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start;padding-block:var(--pad-3) 80px;}
 .ac-nav,.ac-main{min-width:0;}
 
 /* ---------- left rail ---------- */
@@ -1637,7 +1657,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .ac-head h2{font-size:var(--fs-h3);}
 .ac-head p{color:var(--body);font-size:var(--fs-400);margin-top:8px;max-width:60ch;}
 
-.ac-card{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:clamp(20px,2.4vw,28px);}
+.ac-card{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:var(--pad-1);}
 .ac-card + .ac-card{margin-top:14px;}
 .ac-card h3{font-size:var(--fs-h5);margin-bottom:4px;}
 .ac-card .sub{font-size:var(--fs-200);color:var(--muted);}
@@ -1801,7 +1821,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
   .form .btn .arw{display:none;}
 
   /* the whole block was taller than a phone screen for no good reason */
-  .cta{padding-block:clamp(30px,7vw,44px);}
+  .cta{padding-block:var(--pad-3);}
   .cta .inner{gap:var(--space-4);}
   .cta .row{gap:var(--space-3) var(--space-5);margin-top:2px;}
   .cta p{font-size:var(--fs-300);}
@@ -1982,7 +2002,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .dlg[open].is-closing::backdrop{animation:veilOut var(--t-2) var(--ease-exit) 40ms forwards;}
 @keyframes dlgOut{to{opacity:0;transform:translateY(10px) scale(.985);}}
 @keyframes veilOut{to{opacity:0;}}
-.dlg-inner{padding:clamp(22px,3vw,30px);}
+.dlg-inner{padding:var(--pad-2);}
 .dlg-top{display:flex;align-items:flex-start;gap:var(--space-4);}
 .dlg-ic{
   width:44px;height:44px;border-radius:13px;flex:0 0 auto;
@@ -2145,7 +2165,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    ========================================================================== */
 .state{
   display:none;flex-direction:column;align-items:center;text-align:center;gap:var(--space-3);
-  padding:clamp(34px,5vw,56px) 22px;
+  padding:var(--pad-4) 22px;
 }
 .state.on{display:flex;}
 .state .si{
@@ -2167,7 +2187,7 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .skel.on{display:flex;}
 .skel-row{
   display:flex;align-items:center;gap:var(--space-5);
-  padding:clamp(18px,2vw,26px) 6px;border-bottom:1px solid rgba(255,255,255,.13);
+  padding:var(--pad-1) 6px;border-bottom:1px solid rgba(255,255,255,.13);
 }
 .skel-bar{
   height:14px;border-radius:999px;
