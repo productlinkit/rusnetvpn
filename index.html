@@ -1023,10 +1023,47 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
    Travel is in em so it tracks the clamped font size instead of being 8px
    against 52px on a phone and 8px against 86px on a desktop — the same gesture
    at both ends rather than the same number of pixels. */
-@keyframes priceOut{to{opacity:0;transform:translateY(-.30em);}}
-@keyframes priceIn{from{opacity:0;transform:translateY(.38em);}to{opacity:1;transform:none;}}
-.pcard .amt.roll-out .val{animation:priceOut var(--t-1) var(--ease-exit) both;}
-.pcard .amt.roll-in  .val{animation:priceIn  var(--t-4) var(--ease-seat) both;}
+/* Transitions, not keyframes, and the reason is a failure mode rather than a
+   preference. A keyframe animation whose timeline stops advancing keeps
+   applying the keyframe it is parked on — measured here as
+   priceIn:running:currentTime=0 held for 1.4s, which is opacity 0, which is a
+   price nobody can see. It happened in 3 of 12 runs. `forwards` does not help:
+   at currentTime 0 the animation is active and the 0% frame wins. A transition
+   fails the other way — if it never runs, the element is simply already at the
+   target, and the target here is the readable resting state. That is why the
+   original .flip transition never had this bug, and it is the property worth
+   keeping. Same rule as the swap timer: every way this can fail must fail with
+   the number on screen. */
+.pcard .amt .val{
+  opacity:1;transform:none;
+  transition:opacity var(--t-4) var(--ease-seat),transform var(--t-4) var(--ease-seat);
+}
+/* leaving: up and out, on the exit curve and over a third of the time */
+.pcard .amt.roll-out .val{
+  opacity:0;transform:translateY(-.30em);
+  transition:opacity var(--t-1) var(--ease-exit),transform var(--t-1) var(--ease-exit);
+}
+/* the single committed frame between the two halves: the new figure parked
+   below, placed with no transition so it does not slide down into position
+   before rising back up. Applied and removed in one synchronous block with a
+   forced reflow between, so the roll never waits on a frame that may not come. */
+.pcard .amt.roll-set .val{
+  opacity:0;transform:translateY(.38em);
+  transition:none;
+}
+/* The guaranteed landing, and the reason it has to exist. Moving the figure to
+   a hidden parked state and relying on a transition to bring it back is only
+   safe if that transition runs, and it does not always: on a fresh load
+   paintPlan() rolls the default plan while the card is still off screen, the
+   transition is created but its timeline never advances, and the price stays
+   at opacity 0 and .38em low — invisible, from load, until something forces a
+   recalc. Measured at rest as matrix(1,0,0,1,0,32.68), which is exactly .38em
+   of an 86px figure. Transitions fail toward their target only when the stuck
+   state is the visible one; here the stuck state is the hidden one, so the
+   landing has to be asserted rather than assumed. Same contract as the counter
+   and the swap: a timer lands it, the motion is only how it looks getting
+   there. */
+.pcard .amt.roll-done .val{transition:none;opacity:1;transform:none;}
 .pcard .per{font-size:14.5px;color:var(--body);margin-top:14px;}
 .pcard .per b{color:var(--ink);}
 .pcard .save{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;border-radius:999px;background:var(--green-tint);color:var(--green-text);font-size:13px;font-weight:700;}
@@ -1834,15 +1871,38 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    after it, so what you last see is the page coming back rather than a hole
    where the dialog was. Exits are short on purpose — a dismissal you have to
    wait out is the single most expensive 200ms in an interface. */
-.dlg[open]{animation:dlgIn var(--t-4) var(--ease-seat) 70ms both;}
+/* The lead comes from the two durations rather than from a delay on the panel,
+   and the panel fills `forwards` rather than `both`. That is a safety property,
+   not a style one: the backwards half of `both` pins an element at its keyframe
+   `from` until the animation starts, dlgIn starts at opacity 0, and an
+   animation that is created but left pending therefore leaves a modal that is
+   invisible while still holding the focus trap and the inert background — a
+   dialog you cannot see but cannot escape past. The same fault was caught on
+   the price, once in six runs. With `forwards` a pending animation falls back
+   to the element's own style, which is a dialog you can read.
+   The veil keeps `both` because its `from` is a transparent backdrop, so its
+   worst case is no dimming rather than no dialog. It still finishes in half the
+   panel's time, which is what makes the room read as darkening first. */
+.dlg[open]{animation:dlgIn var(--t-4) var(--ease-seat) forwards;}
 .dlg[open]::backdrop{animation:veilIn var(--t-2) var(--ease-enter) both;}
-@keyframes dlgIn{from{opacity:0;transform:translateY(18px) scale(.966);}to{opacity:1;transform:none;}}
+/* No opacity on the panel, deliberately. A keyframe animation whose timeline
+   stalls keeps applying the frame it is parked on — measured on the price as
+   currentTime stuck at 0 for well over a second — and a panel parked on
+   opacity 0 is a modal you cannot see while it still holds the focus trap and
+   the inert background behind it. Animating transform alone means the worst
+   case is a dialog sitting 18px low at 97% scale: odd-looking, entirely
+   usable, and readable. The fade was never carrying the entrance anyway; the
+   veil and the travel are. */
+@keyframes dlgIn{from{transform:translateY(18px) scale(.966);}to{transform:none;}}
 @keyframes veilIn{from{opacity:0;}to{opacity:1;}}
 /* [open] is still set while this runs — the dialog does not leave the top layer
    until the animation has finished — so these have to outrank the rules above
    on specificity rather than on source order alone. */
-.dlg[open].is-closing{animation:dlgOut var(--t-1) var(--ease-exit) both;}
-.dlg[open].is-closing::backdrop{animation:veilOut var(--t-2) var(--ease-exit) 40ms both;}
+/* forwards on the way out too: these end at opacity 0 and need that held until
+   close() lands, but their `from` is the visible resting state, so there is
+   nothing backwards fill could usefully pin */
+.dlg[open].is-closing{animation:dlgOut var(--t-1) var(--ease-exit) forwards;}
+.dlg[open].is-closing::backdrop{animation:veilOut var(--t-2) var(--ease-exit) 40ms forwards;}
 @keyframes dlgOut{to{opacity:0;transform:translateY(10px) scale(.985);}}
 @keyframes veilOut{to{opacity:0;}}
 .dlg-inner{padding:clamp(22px,3vw,30px);}
@@ -2891,6 +2951,22 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
         <div class="qinline" id="qans-12" role="region" aria-labelledby="qbtn-12"><div><p>Our servers run from RAM and keep no persistent disk, so a machine that is powered down keeps nothing. There are no connection logs, no traffic logs and no DNS logs to hand over — a seized server holds the software that routes traffic and nothing that identifies who sent it.</p></div></div>
       </div>
 
+      <!-- The answer is prose with no link in it on purpose. The desktop panel
+           is built with qpA.textContent = $('.qinline p', r).textContent, so an
+           <a> here would survive in the mobile accordion and vanish silently on
+           desktop, which is the worst of both. The status section is named
+           instead, and the footer already links it.
+           Wording follows #audit-status, which is the authoritative statement:
+           committed, scope defined, no auditor appointed, nothing completed. -->
+      <div class="qrow" data-cat="Privacy">
+        <button class="qitem" id="qbtn-13" aria-expanded="false" aria-controls="qans-13">
+          <span class="qn mono">13</span>
+          <span class="qt">Has the no-log claim been independently audited?</span>
+          <span class="qc"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5"/></svg></span>
+        </button>
+        <div class="qinline" id="qans-13" role="region" aria-labelledby="qbtn-13"><div><p>Not yet, and we would rather say so than imply otherwise. We run RusVPN as a no-log service — no traffic logs, no DNS query logs, no connection timestamps tied to an account — and we have committed to having that claim examined by an outside firm instead of asking you to take our word for it. No auditor has been appointed yet and no report exists, so we do not describe the service as audited anywhere on this site. The scope to be assessed and the current state of the work are set out under “Independent audit — status”, linked in the footer, and that is where the report will be published in full when there is one, including any findings against us.</p></div></div>
+      </div>
+
       <!-- a search that finds nothing has to offer the next move, not just go
            blank. This is the "empty" half of the state set the audit asked for. -->
       <div class="state" id="q-empty">
@@ -3926,15 +4002,30 @@ var cio = new IntersectionObserver(function(es){
     if(RM || !isFinite(end)){ el.textContent = (isFinite(end) ? end : 0).toFixed(dec); return; }
     var dur = 700 + 260 * Math.abs(Math.round(end)).toString().length;
     var lead = COUNT_LEAD * (parseInt(el.dataset.countOrder || '0', 10) || 0);
+    var landed = false;
+    function land(){
+      if(landed) return;
+      landed = true;
+      el.textContent = end.toFixed(dec);
+    }
     function step(t){
+      if(landed) return;
       if(t0 === null) t0 = t;
       var p = (t - t0 - lead) / dur;
       if(p < 0){ requestAnimationFrame(step); return; }   /* still in the stagger */
-      if(p >= 1){ el.textContent = end.toFixed(dec); return; }
+      if(p >= 1){ land(); return; }
       el.textContent = (end * easeEnter(p)).toFixed(dec);
       requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
+    /* The loop above only ever stops by reaching the end, so the final frame is
+       guaranteed — as long as frames keep coming, and they do not. rAF stops in
+       a backgrounded tab and was caught stalling outright here, leaving 429 on
+       screen under a heading that claims 700, and 48 under one that claims 90.
+       Same lesson as the price roll: a number we assert has to arrive whether
+       or not anything painted. The timer is the contract; the animation is only
+       how it looks on the way. */
+    setTimeout(land, lead + dur + 120);
   });
 },{threshold:.5});
 /* Stagger order comes from position in the tile group, not from the order the
@@ -4602,25 +4693,34 @@ function cssMs(prop, fallback){
   if(!isFinite(n)) return fallback;
   return /ms\s*$/.test(v) ? n : n * 1000;      /* CSS time is s unless it says ms */
 }
-var ROLL_OUT_MS = cssMs('--t-1', 150);
-var pPending = null, pRollTimer = 0;
+var ROLL_OUT_MS = cssMs('--t-1', 150), ROLL_IN_MS = cssMs('--t-4', 420);
+var pPending = null, pRollTimer = 0, pLandTimer = 0;
 function commitPrice(){
   if(pPending === null) return;
   pVal.textContent = pPending;
   pPending = null;
+  /* Park the new figure below with transitions off, force the reflow that
+     commits that state, then drop back to the resting style so the rise is a
+     transition from where it now is. All in one synchronous block: waiting a
+     frame to remove the parked class would mean the price stays hidden for as
+     long as frames are not arriving, which is exactly the failure this whole
+     approach exists to avoid. */
   pAmt.classList.remove('roll-out');
-  void pAmt.offsetWidth;                       /* restart, do not resume */
-  pAmt.classList.add('roll-in');
+  pAmt.classList.add('roll-set');
+  void pAmt.offsetWidth;
+  pAmt.classList.remove('roll-set');
+  clearTimeout(pLandTimer);
+  pLandTimer = setTimeout(function(){ pAmt.classList.add('roll-done'); }, ROLL_IN_MS + 80);
 }
 function rollPrice(v){
   pPending = v;
-  /* both classes off with a reflow between: re-adding a class the element
-     already carries does not restart its animation, so switching plans faster
-     than the roll finishes would otherwise leave the old figure mid-exit */
-  pAmt.classList.remove('roll-in','roll-out');
+  /* off and on with a reflow between, so switching plans faster than the roll
+     finishes restarts the exit rather than leaving the old figure mid-flight */
+  pAmt.classList.remove('roll-out','roll-set','roll-done');
   void pAmt.offsetWidth;
   pAmt.classList.add('roll-out');
   clearTimeout(pRollTimer);
+  clearTimeout(pLandTimer);
   pRollTimer = setTimeout(commitPrice, ROLL_OUT_MS + 16);
 }
 function paintPlan(i, announceIt){
@@ -5854,7 +5954,7 @@ Object.keys(AC_HASH).forEach(function(p){
 /* ==========================================================================
    FAQ SEARCH
    ==========================================================================
-   Twelve answers is past the point where a list is scannable. Search runs over
+   Thirteen answers is past the point where a list is scannable. Search runs over
    the question, the answer and the category, so "money back", "refund" and
    "Billing" all reach the same row. The result count is a live region — a list
    that silently rearranges itself is invisible to anyone not watching it. */
