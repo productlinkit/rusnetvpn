@@ -1857,6 +1857,20 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 }
 
 /* ==========================================================================
+   FORCED COLORS (Windows High Contrast)
+   ==========================================================================
+   In forced-colors mode the OS replaces the palette wholesale, and anything
+   whose shape came from a background colour rather than a border loses its
+   edge — the buttons, the FAQ rows and the payment-method tiles all flatten
+   into the page. A border in ButtonText restores the boundary the fill was
+   drawing, and the focus ring is re-stated in Highlight because the authored
+   ring colour is one of the things the OS discards. */
+@media (forced-colors: active){
+  .btn, .qitem, .chip, input, select, textarea, .co-method-b{ border:1px solid ButtonText; }
+  :focus-visible{ outline:3px solid Highlight; outline-offset:3px; }
+}
+
+/* ==========================================================================
    DIALOGS — one overlay system for confirm / error / info
    ==========================================================================
    Built on <dialog> + showModal(), which is what gives us the focus trap, the
@@ -3139,6 +3153,38 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
   </div>
 </section>
 
+<section class="wrap sec-tight" id="accessibility" aria-labelledby="a11y-h">
+  <div class="astat">
+    <div class="astat-t">
+      <span class="eyebrow"><i class="dot"></i><span>Transparency</span></span>
+      <h2 id="a11y-h">Accessibility — status</h2>
+    </div>
+    <div class="astat-b">
+      <p>
+        <b>The site is built to WCAG 2.2 AA, and we would rather show the work
+        than wear a badge.</b> Every text colour clears its required ratio on the
+        surface it sits on — 4.5:1 for body text, 3:1 for large display type; the
+        brand red is darkened on buttons so white still clears 4.5:1 at the
+        lightest point of the gradient. Focus is always visible at a consistent
+        3px ring, motion honours <span class="mono">prefers-reduced-motion</span>,
+        every field is labelled, and dialogs trap focus, close on Esc and return
+        focus to where you left.
+      </p>
+      <p>
+        Automated testing (axe-core, WCAG 2.0/2.1/2.2 A &amp; AA) reports zero
+        violations. That is the floor, not the finish line: automated tools cannot
+        judge a screen-reader journey, so we do not claim more than we have checked.
+      </p>
+      <dl class="astat-rows">
+        <div><dt>Standard</dt><dd>WCAG 2.2 level AA — contrast, focus, labels, motion, dialogs</dd></div>
+        <div><dt>Verified</dt><dd>Zero automated violations; keyboard path and visible focus confirmed</dd></div>
+        <div><dt>Not yet</dt><dd>A recorded screen-reader pass and Windows High-Contrast review — in progress</dd></div>
+      </dl>
+      <p class="tiny">Last reviewed 12 August 2026.</p>
+    </div>
+  </div>
+</section>
+
 <footer class="wrap">
   <div class="fgrid">
     <div class="about">
@@ -3153,7 +3199,7 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
     </div>
     <div class="fcol">
       <h3>Customer service</h3>
-      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#ux-research">Usability research</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
+      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#ux-research">Usability research</a><a href="#accessibility">Accessibility</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
     </div>
     <div class="fcol">
       <h3>Address</h3>
