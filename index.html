@@ -1395,6 +1395,17 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 .astat-rows dt{color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
 .astat-rows dd{color:var(--ink);font-size:14.5px;line-height:1.6;}
 .astat .tiny{margin-top:16px;}
+/* The audit and the usability research are the same promise measured two ways,
+   so they read as one transparency band instead of two sections competing for
+   the same ground: section padding runs on the outside of the pair only, and a
+   hairline marks where the halves meet. Each half stays its own <section> so
+   both keep a landmark and both footer anchors land on a real region. */
+.sec-pair-a{padding-block:clamp(56px,6vw,84px) 0;}
+.sec-pair-b{padding-block:0 clamp(56px,6vw,84px);}
+.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:clamp(30px,3.6vw,46px);border-top:1px solid var(--line);}
+/* the second half carries no eyebrow — the band is labelled once, at the top —
+   so its heading loses the offset that exists only to clear one */
+.sec-pair-b .astat h2{margin-top:0;}
 @media(max-width:860px){
   .astat{grid-template-columns:1fr;}
   .astat-rows > div{grid-template-columns:1fr;gap:4px;}
@@ -1782,6 +1793,11 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
 @media(max-width:640px){
   .sec{padding-block:40px;}
   .sec-tight{padding-block:30px;}
+  /* the transparency pair is one sec-tight worth of padding split across two
+     sections, so it trims to the same 30px the rest of the rhythm does */
+  .sec-pair-a{padding-block:30px 0;}
+  .sec-pair-b{padding-block:0 30px;}
+  .sec-pair-b .astat{margin-top:26px;padding-top:26px;}
   .sec-cta{padding-bottom:40px;}
   .sec-head{margin-bottom:20px;}
   .hero{padding-top:clamp(96px,26vw,120px);}
@@ -2967,6 +2983,15 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
         <div class="qinline" id="qans-13" role="region" aria-labelledby="qbtn-13"><div><p>Not yet, and we would rather say so than imply otherwise. We run RusVPN as a no-log service — no traffic logs, no DNS query logs, no connection timestamps tied to an account — and we have committed to having that claim examined by an outside firm instead of asking you to take our word for it. No auditor has been appointed yet and no report exists, so we do not describe the service as audited anywhere on this site. The scope to be assessed and the current state of the work are set out under “Independent audit — status”, linked in the footer, and that is where the report will be published in full when there is one, including any findings against us.</p></div></div>
       </div>
 
+      <div class="qrow" data-cat="Research">
+        <button class="qitem" id="qbtn-14" aria-expanded="false" aria-controls="qans-14">
+          <span class="qn mono">14</span>
+          <span class="qt">Have you checked that the site is actually easy to use?</span>
+          <span class="qc"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5"/></svg></span>
+        </button>
+        <div class="qinline" id="qans-14" role="region" aria-labelledby="qbtn-14"><div><p>Yes, and we treat it the same way as the no-log claim — by checking, not asserting. So far this has been an expert usability review with a modeled five-participant benchmark across the discovery, pricing, checkout and account flows. It is meant for finding and fixing problems, not for quoting as a recruited-user study, and we do not present its figures as one. It flagged a confusing sign-in screen and competing calls-to-action; both have been changed — login now asks only for email and password, and the funnel leads with a single primary action. What was tested, what it found and what we changed are set out under “Usability research — status”, linked in the footer, and a recruited real-user study is the next step, published there in full including anything it finds against us.</p></div></div>
+      </div>
+
       <!-- a search that finds nothing has to offer the next move, not just go
            blank. This is the "empty" half of the state set the audit asked for. -->
       <div class="state" id="q-empty">
@@ -3041,8 +3066,14 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
      there is a report, and dressing a pending audit up as one is the exact
      move this section exists to stop. It says what has been done, what has
      not, and when — and when a report exists it replaces this copy rather
-     than being bolted on somewhere else. -->
-<section class="wrap sec-tight" id="audit-status" aria-labelledby="audit-status-h">
+     than being bolted on somewhere else.
+
+     It runs as one band with USABILITY RESEARCH below it, because the FAQ says
+     the two claims are treated the same way and a page that gave one a section
+     and the other a footer link would be showing the opposite. Two sections
+     rather than one so each keeps its own landmark and named anchor; .sec-pair-a
+     / .sec-pair-b just move the padding to the outside of the pair. -->
+<section class="wrap sec-pair-a" id="audit-status" aria-labelledby="audit-status-h">
   <div class="astat">
     <div class="astat-t">
       <span class="eyebrow"><i class="dot"></i><span>Transparency</span></span>
@@ -3071,6 +3102,43 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
   </div>
 </section>
 
+<!-- ======================= USABILITY RESEARCH =======================
+     The second half of the transparency band. Same shape as the audit block on
+     purpose: method, what changed, what is next — and the same refusal to call
+     a modeled benchmark a user study. There is no separate report page to link,
+     so this section is the report rather than a teaser for one; every claim in
+     it is checkable on this page (open the login panel and it asks for an email
+     and a password, nothing else). -->
+<section class="wrap sec-pair-b" id="ux-research" aria-labelledby="ux-research-h">
+  <div class="astat">
+    <div class="astat-t">
+      <h2 id="ux-research-h">Usability research — status</h2>
+    </div>
+    <div class="astat-b">
+      <p>
+        <b>We test the experience the same way we treat the no-log claim: by
+        checking, not asserting.</b> So far this has been an expert usability
+        review with a modeled five-participant benchmark — a structured
+        walkthrough of the discovery, pricing, checkout and account flows.
+      </p>
+      <p>
+        It is useful for finding and fixing problems; it is not a recruited
+        real-user study, and we do not present its numbers as one. What it
+        flagged, we changed rather than filed away: a confusing sign-in screen
+        (a “confirm password” field on the login state) and competing
+        calls-to-action are both fixed — login now asks only for email and
+        password, and the funnel leads with one primary action.
+      </p>
+      <dl class="astat-rows">
+        <div><dt>Method</dt><dd>Expert usability review + modeled 5-participant benchmark — not recruited users</dd></div>
+        <div><dt>Changed so far</dt><dd>Sign-in simplified, calls-to-action unified — both already live on this page</dd></div>
+        <div><dt>Next</dt><dd>A recruited real-user study, published here in full including any findings against us</dd></div>
+      </dl>
+      <p class="tiny">Last reviewed 12 August 2026.</p>
+    </div>
+  </div>
+</section>
+
 <footer class="wrap">
   <div class="fgrid">
     <div class="about">
@@ -3085,7 +3153,7 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
     </div>
     <div class="fcol">
       <h3>Customer service</h3>
-      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
+      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#ux-research">Usability research</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
     </div>
     <div class="fcol">
       <h3>Address</h3>
