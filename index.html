@@ -6088,7 +6088,7 @@ if(/[?&]demo=1(&|$)/.test(location.search) || location.hash === '#demo'){
     note.textContent = 'Review mode — fields are prefilled with dummy data. No real account is created.';
     note.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:10px;z-index:500;' +
       'margin:0;padding:10px 18px;border-radius:999px;background:var(--ink);color:#fff;' +
-      'font-size:13.5px;font-weight:600;box-shadow:var(--shadow-md);max-width:calc(100vw - 28px);text-align:center;';
+      'font-size:var(--fs-200);font-weight:600;box-shadow:var(--shadow-md);max-width:calc(100vw - 28px);text-align:center;';
     document.body.appendChild(note);
     if(ctaEmail) ctaEmail.value = DEMO_MAIL;
     window.setTimeout(function(){
