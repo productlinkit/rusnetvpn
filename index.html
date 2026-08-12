@@ -1401,11 +1401,12 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
    hairline marks where the halves meet. Each half stays its own <section> so
    both keep a landmark and both footer anchors land on a real region. */
 .sec-pair-a{padding-block:clamp(56px,6vw,84px) 0;}
+.sec-pair-m{padding-block:0;}
 .sec-pair-b{padding-block:0 clamp(56px,6vw,84px);}
-.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:clamp(30px,3.6vw,46px);border-top:1px solid var(--line);}
-/* the second half carries no eyebrow — the band is labelled once, at the top —
-   so its heading loses the offset that exists only to clear one */
-.sec-pair-b .astat h2{margin-top:0;}
+.sec-pair-m .astat,.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:clamp(30px,3.6vw,46px);border-top:1px solid var(--line);}
+/* every half after the first carries no eyebrow — the band is labelled once, at
+   the top — so those headings lose the offset that exists only to clear one */
+.sec-pair-m .astat h2,.sec-pair-b .astat h2{margin-top:0;}
 @media(max-width:860px){
   .astat{grid-template-columns:1fr;}
   .astat-rows > div{grid-template-columns:1fr;gap:4px;}
@@ -1796,8 +1797,9 @@ footer{padding-block:clamp(50px,5vw,80px) 40px;}
   /* the transparency pair is one sec-tight worth of padding split across two
      sections, so it trims to the same 30px the rest of the rhythm does */
   .sec-pair-a{padding-block:30px 0;}
+  .sec-pair-m{padding-block:0;}
   .sec-pair-b{padding-block:0 30px;}
-  .sec-pair-b .astat{margin-top:26px;padding-top:26px;}
+  .sec-pair-m .astat,.sec-pair-b .astat{margin-top:26px;padding-top:26px;}
   .sec-cta{padding-bottom:40px;}
   .sec-head{margin-bottom:20px;}
   .hero{padding-top:clamp(96px,26vw,120px);}
@@ -3123,7 +3125,7 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
      so this section is the report rather than a teaser for one; every claim in
      it is checkable on this page (open the login panel and it asks for an email
      and a password, nothing else). -->
-<section class="wrap sec-pair-b" id="ux-research" aria-labelledby="ux-research-h">
+<section class="wrap sec-pair-m" id="ux-research" aria-labelledby="ux-research-h">
   <div class="astat">
     <div class="astat-t">
       <h2 id="ux-research-h">Usability research — status</h2>
@@ -3153,10 +3155,9 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
   </div>
 </section>
 
-<section class="wrap sec-tight" id="accessibility" aria-labelledby="a11y-h">
+<section class="wrap sec-pair-b" id="accessibility" aria-labelledby="a11y-h">
   <div class="astat">
     <div class="astat-t">
-      <span class="eyebrow"><i class="dot"></i><span>Transparency</span></span>
       <h2 id="a11y-h">Accessibility — status</h2>
     </div>
     <div class="astat-b">
