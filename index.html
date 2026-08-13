@@ -626,6 +626,11 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 @media(max-width:960px){.hero-top{grid-template-columns:1fr;gap:var(--space-6);align-items:start;}}
 .hero h1{margin-top:20px;text-wrap:balance;}
 .hero h1 .serif{color:var(--red);}
+/* The hero eyebrow is hidden for now. The headline's 20px offset exists only to
+   clear that pill, so it goes with it rather than leaving a gap above a hero
+   that starts at the top of its cell — delete both lines to bring the pill back. */
+.hero-top .eyebrow{display:none;}
+.hero-top .eyebrow + h1{margin-top:0;}
 .hero-side{display:flex;flex-direction:column;gap:var(--space-6);padding-bottom:8px;}
 .hero-cta{display:flex;gap:var(--space-3);flex-wrap:wrap;}
 .trust{display:flex;align-items:center;gap:var(--space-3);}
@@ -1284,7 +1289,7 @@ footer{padding-block:var(--pad-5) 40px;}
   .fgrid{grid-template-columns:repeat(3,1fr);gap:var(--space-6);padding-bottom:32px;}
   .fgrid .about{grid-column:1/-1;}
 }
-/* below this the three columns are narrower than "Independent audit status" */
+/* below this the three columns are narrower than the longest link label */
 @media(max-width:620px){.fgrid{grid-template-columns:1fr;gap:var(--space-6);}}
 /* ---------- one rhythm for the whole grid ----------
    18px from a heading to the first line of text under it, in every column, at
@@ -1472,6 +1477,10 @@ footer{padding-block:var(--pad-5) 40px;}
 /* every half after the first carries no eyebrow — the band is labelled once, at
    the top — so those headings lose the offset that exists only to clear one */
 .sec-pair-m .astat h2,.sec-pair-b .astat h2{margin-top:0;}
+/* The whole transparency band is hidden for now. The markup and every rule
+   above it stay as they are: delete this one rule to bring all three sections
+   back, and restore the three footer links in the Customer service column. */
+#audit-status,#ux-research,#accessibility{display:none;}
 @media(max-width:860px){
   .astat{grid-template-columns:1fr;}
   .astat-rows > div{grid-template-columns:1fr;gap:var(--space-1);}
@@ -3266,7 +3275,11 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
     </div>
     <div class="fcol">
       <h3>Customer service</h3>
-      <a href="#faq">FAQ</a><a href="#audit-status">Independent audit status</a><a href="#ux-research">Usability research</a><a href="#accessibility">Accessibility</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
+      <!-- the audit status, usability research and accessibility links are out
+           while the transparency band is hidden: a footer link that scrolls to a
+           display:none section just does nothing. Restore them here when the
+           band comes back. -->
+      <a href="#faq">FAQ</a><a href="#">Send a Message</a><a href="#">WhatsApp</a><a href="#">Telegram</a><a href="#" data-auth="in">My Account</a>
     </div>
     <div class="fcol">
       <h3>Address</h3>
