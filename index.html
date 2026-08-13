@@ -1207,7 +1207,17 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .qrow.is-on .qt{color:var(--ink);font-weight:700;}
 .qrow.is-on .qc{opacity:1;transform:none;color:var(--red-text);}
 
-.qpanel{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-xl);padding:var(--pad-3);display:flex;flex-direction:column;}
+/* Fourteen rows of questions against an answer that is one paragraph: stretched
+   to the row, the card was as tall as the list and painted the answer at its
+   top, so clicking question 10 put the text you just asked for above the
+   viewport and made you scroll back up to read your own click. The panel rides
+   the scroll instead — content-height, pinned under the fixed header at the
+   96px the account rail already sticks at. min-height stops it resizing under
+   every swap; max-height keeps the longest answers scrollable on a short window
+   rather than pinning them with their last lines below the fold. */
+.qpanel{position:sticky;top:96px;align-self:start;overflow:auto;
+  min-height:min(clamp(300px,34vw,420px),calc(100dvh - 120px));max-height:calc(100dvh - 120px);
+  background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-xl);padding:var(--pad-3);display:flex;flex-direction:column;}
 .qpanel .ghost{position:absolute;top:-26px;right:10px;font-size:clamp(120px,15vw,210px);font-weight:800;letter-spacing:-.06em;color:var(--ink);opacity:.035;line-height:1;pointer-events:none;user-select:none;}
 .qp-top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);position:relative;z-index:2;}
 .qp-count{font-size:var(--fs-100);font-weight:700;letter-spacing:.12em;color:var(--muted);}
@@ -5266,6 +5276,10 @@ function paintQ(i){
   qpQ.textContent = $('.qt', r).textContent;
   qpA.textContent = $('.qinline p', r).textContent;
   qpGhost.textContent = num;
+  /* the panel scrolls internally once an answer outruns a short window, and
+     that offset is the old answer's, not the new one's — every question opens
+     at its first line */
+  qpanel.scrollTop = 0;
 }
 function setQ(i, instant){
   qActive = i;
