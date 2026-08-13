@@ -1194,6 +1194,11 @@ body.is-auth #sheet-acct-cta{display:grid !important;}
 .qsplit{display:grid;grid-template-columns:.86fr 1.14fr;gap:clamp(14px,2vw,26px);align-items:stretch;}
 .qnav{border-top:1px solid var(--line);}
 .qrow{border-bottom:1px solid var(--line);}
+/* a question taken out of the set. CSS alone would not hold it: the search
+   writes r.hidden on every row it knows about, so the first keystroke would
+   put it back. The row is dropped from qrows at source too — see the FAQ
+   script — which is also what keeps the "01 / 13" total honest. */
+.qrow[data-off]{display:none;}
 .qitem{position:relative;width:100%;display:grid;grid-template-columns:38px 1fr 22px;align-items:center;gap:var(--space-3);text-align:left;padding:var(--pad-1) 0;transition:padding-left .45s var(--ease);}
 .qitem::before{content:"";position:absolute;left:0;top:22%;height:56%;width:2px;background:var(--red);transform:scaleY(0);transition:transform .45s var(--ease);}
 .qitem .qn{font-size:var(--fs-100);font-weight:700;letter-spacing:.08em;color:var(--muted);transition:color .3s;}
@@ -3083,7 +3088,10 @@ svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
         <div class="qinline" id="qans-13" role="region" aria-labelledby="qbtn-13"><div><p>Not yet, and we would rather say so than imply otherwise. We run RusVPN as a no-log service — no traffic logs, no DNS query logs, no connection timestamps tied to an account — and we have committed to having that claim examined by an outside firm instead of asking you to take our word for it. No auditor has been appointed yet and no report exists, so we do not describe the service as audited anywhere on this site. The scope to be assessed and the current state of the work are set out under “Independent audit — status”, linked in the footer, and that is where the report will be published in full when there is one, including any findings against us.</p></div></div>
       </div>
 
-      <div class="qrow" data-cat="Research">
+      <!-- hidden with the usability research section it points at. data-off
+           drops it from the script's row set, so it is out of the count, the
+           search and the arrow-key walk rather than merely invisible. -->
+      <div class="qrow" data-off data-cat="Research">
         <button class="qitem" id="qbtn-14" aria-expanded="false" aria-controls="qans-14">
           <span class="qn mono">14</span>
           <span class="qt">Have you checked that the site is actually easy to use?</span>
@@ -5266,7 +5274,12 @@ cmpBtn.addEventListener('click', function(){
 });
 
 /* ---------- faq: split master / detail ---------- */
-var qsplit = $('#qsplit'), qrows = $$('.qrow', qsplit), qpanel = $('#qpanel');
+var qsplit = $('#qsplit'), qpanel = $('#qpanel');
+/* [data-off] rows are out of the FAQ, not just off screen. Everything below
+   counts, searches, paints and arrow-keys through qrows, so dropping them here
+   is the one place that has to know — the total, the search and the keyboard
+   walk all follow from it. */
+var qrows = $$('.qrow', qsplit).filter(function(r){ return !r.hasAttribute('data-off'); });
 var qpCount = $('#qp-count'), qpCat = $('#qp-cat'), qpQ = $('#qp-q'), qpA = $('#qp-a'), qpGhost = $('#qp-ghost');
 var qTotal = ('0'+qrows.length).slice(-2), qActive = 0;
 function paintQ(i){
