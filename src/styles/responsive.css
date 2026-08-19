@@ -1,0 +1,87 @@
+/* ==========================================================================
+   SMALL SCREENS — stop things stacking on top of each other
+   ========================================================================== */
+@media(max-width:640px){
+  /* long unbroken words were pushing the page sideways */
+  h1,h2,h3,h4,p,li,.qt,.nm,.acct-id b{overflow-wrap:break-word;}
+
+  /* the two top chips met in the middle on narrow phones. keep one. */
+  .chip.c2{display:none;}
+  .chip.c1{max-width:calc(100% - 32px);}
+
+  /* the pill only reads as a pill on one line. wrapped, the 999px radius turned
+     it into a 120px blob with the button floating in the middle of it. keep the
+     two on one line and let the field shrink instead. */
+  .form{width:100%;flex-wrap:nowrap;padding:6px;gap:6px;}
+  .form input{flex:1 1 auto;min-width:0;width:auto;padding:12px 14px;font-size:14.5px;}
+  .form .btn{flex:0 0 auto;padding:12px 18px;font-size:14px;}
+  .form .btn .arw{display:none;}
+
+  /* the whole block was taller than a phone screen for no good reason */
+  .cta{padding-block:clamp(30px,7vw,44px);}
+  .cta .inner{gap:16px;}
+  .cta .row{gap:10px 18px;margin-top:2px;}
+  .cta p{font-size:14.5px;}
+
+  /* the sheet is scrollable now, so the links can afford to be a touch smaller */
+  .sheet > a{font-size:clamp(24px,6.2vw,32px);padding:16px 0;}
+  .sheet .sheet-cta{margin-top:26px;}
+
+  .sec-head{gap:22px;}
+  .sec-head .aside{max-width:none;}
+
+  /* region rows: name and meta were colliding with the arrow */
+  .rowi{gap:6px;}
+  .rowi .nm{padding-right:8px;}
+  .rowi .tag{white-space:normal;}
+
+  .stats .l{font-size:12.5px;}
+  .pcard .amt .val{letter-spacing:-.04em;}
+  .trial .paylist{gap:6px;}
+  .trial .paylist span{font-size:11px;padding:6px 9px;gap:6px;}
+  .paylogo.pl-card,.paylogo.pl-paypal{height:15px;}
+  .paylogo.pl-apple,.paylogo.pl-google{height:14px;}
+  .paylogo.pl-stripe{height:16px;}
+  .band .inner{padding-right:22px;}
+}
+@media(max-width:400px){
+  /* two columns still fit here. one column just made the page 200px taller
+     for four numbers that were never cramped in the first place. */
+  .stats .st{padding:20px 14px;}
+  .fab .toggle{width:50px;height:50px;}
+}
+
+/* ---------- vertical trim on phones ----------
+   the section rhythm is tuned for a 1280px canvas. on a 360px screen the same
+   padding is most of a screenful of nothing between every block. */
+@media(max-width:640px){
+  .sec{padding-block:52px;}
+  .sec-tight{padding-block:38px;}
+  .sec-head{margin-bottom:26px;}
+  .hero{padding-top:clamp(96px,26vw,120px);}
+
+  .tile{padding:18px;}
+  .tile .ic{width:36px;height:36px;border-radius:10px;margin-bottom:14px;}
+  .tile .ic svg{width:17px;height:17px;}
+  .tile h3{margin-bottom:7px;}
+  .tile p{font-size:14px;line-height:1.5;}
+  .tile .viz{height:44px;margin-top:16px;}
+
+  .phone.p-main{width:min(56%,190px);}
+  .applist{gap:11px;margin-top:22px;}
+  .stores{margin-top:22px;}
+  .pc{margin-top:26px;}
+
+  .pcard .amt{margin-top:18px;}
+  .pcard .feat{margin-top:22px;padding-top:20px;gap:10px;}
+}
+
+/* ==========================================================================
+   REVEAL
+   ========================================================================== */
+.up{opacity:0;transform:translateY(22px);transition:opacity .8s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0ms);}
+.up.in{opacity:1;transform:none;}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important;}
+  .up{opacity:1;transform:none;}
+}

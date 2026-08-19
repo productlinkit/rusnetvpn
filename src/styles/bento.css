@@ -1,0 +1,51 @@
+/* ==========================================================================
+   BENTO — click to focus, siblings dim + shrink
+   ========================================================================== */
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.tile{
+  position:relative;background:var(--card);border-radius:var(--r-lg);padding:clamp(22px,2.2vw,30px);
+  text-align:left;border:1px solid var(--line-2);overflow:hidden;
+  transition:transform .55s var(--ease),opacity .45s var(--ease),box-shadow .55s var(--ease),border-color .4s;
+}
+.tile:hover{box-shadow:var(--shadow-sm);}
+.bento.has-open .tile{opacity:.42;transform:scale(.955);}
+.bento.has-open .tile.is-open{opacity:1;transform:scale(1.015);box-shadow:var(--shadow-md);border-color:transparent;z-index:3;}
+.tile.wide{grid-column:span 2;}
+.tile .ic{width:42px;height:42px;border-radius:12px;background:var(--red-tint);color:var(--red);display:grid;place-items:center;margin-bottom:20px;transition:background .4s,color .4s;}
+.tile .ic svg{width:19px;height:19px;}
+.tile.is-open .ic{background:var(--red);color:#fff;}
+.tile h3{margin-bottom:9px;}
+.tile p{font-size:14.5px;color:var(--body);line-height:1.55;}
+.tile .more{
+  display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows .55s var(--ease),opacity .4s;
+}
+.tile.is-open .more{grid-template-rows:1fr;opacity:1;}
+.tile .more > div{overflow:hidden;}
+.tile .more p{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-2);font-size:14px;}
+.tile .togg{position:absolute;top:22px;right:22px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);transition:transform .5s var(--ease),background .4s,color .4s,border-color .4s;}
+.tile .togg svg{width:11px;height:11px;}
+.tile.is-open .togg{transform:rotate(45deg);background:var(--ink);color:#fff;border-color:transparent;}
+.tile .viz{display:flex;gap:4px;align-items:flex-end;height:56px;margin-top:22px;}
+.tile .viz i{flex:1;border-radius:3px;background:linear-gradient(180deg,var(--red-2),var(--red));opacity:.18;transition:opacity .5s,height .8s var(--ease);}
+.tile.is-open .viz i{opacity:.85;}
+/* continent strip on the Global Coverage tile */
+.tile .geo{display:flex;flex-wrap:wrap;gap:7px;margin-top:22px;}
+.tile .geo span{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:999px;background:var(--paper);
+  border:1px solid var(--line-2);font-size:12.5px;font-weight:600;color:var(--body);
+  transition:background .4s,color .4s,border-color .4s;
+}
+.tile .geo span i{width:5px;height:5px;border-radius:50%;background:var(--red);opacity:.45;flex:0 0 auto;transition:opacity .4s;}
+.tile.is-open .geo span{background:var(--red-tint);border-color:rgba(225,39,48,.16);color:var(--ink);}
+.tile.is-open .geo span i{opacity:1;}
+@media(max-width:900px){.bento{grid-template-columns:repeat(2,1fr);}.tile.wide{grid-column:span 2;}}
+@media(max-width:600px){
+  .bento{grid-template-columns:1fr;}
+  .tile.wide{grid-column:span 1;}
+  /* the toggle used to sit on top of the heading once the card got narrow */
+  .tile h3{padding-right:40px;}
+  .tile .togg{top:20px;right:20px;}
+  .tile .geo span{font-size:12px;padding:5px 10px;}
+}

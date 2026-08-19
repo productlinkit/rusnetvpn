@@ -1,0 +1,49 @@
+/* ==========================================================================
+   NAVY BAND (full-bleed dark section)
+   ========================================================================== */
+.navyband{position:relative;background:var(--navy);color:#fff;overflow:hidden;}
+.navyband::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.navyband::after{
+  content:"";position:absolute;right:-6%;bottom:-45%;width:52%;height:130%;pointer-events:none;
+  background:radial-gradient(circle,rgba(225,39,48,.16),transparent 62%);
+}
+.navyband > .wrap{position:relative;z-index:2;}
+.navyband h2{color:#fff;}
+.navyband .eyebrow.is-neutral{color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);}
+.navyband .sec-head .aside{color:rgba(255,255,255,.58);}
+
+/* ==========================================================================
+   REGION ROWS + HOVER PREVIEW
+   ========================================================================== */
+.rows{border-top:1px solid rgba(255,255,255,.16);}
+.rowi{
+  display:grid;grid-template-columns:1.4fr .8fr .7fr 46px;align-items:center;gap:20px;
+  padding:clamp(18px,2vw,26px) 6px;border-bottom:1px solid rgba(255,255,255,.13);
+  transition:padding-left .5s var(--ease),background .4s;position:relative;
+}
+.rowi:hover{padding-left:18px;}
+.rowi .nm{font-size:clamp(18px,2vw,26px);font-weight:700;letter-spacing:-.03em;color:#fff;}
+.rowi .tag{display:inline-flex;padding:6px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:12.5px;color:rgba(255,255,255,.62);white-space:nowrap;}
+.rowi .lat{font-size:14px;font-weight:600;color:rgba(255,255,255,.55);}
+.rowi .lat b{color:#fff;}
+.rowi .go{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.22);color:#fff;display:grid;place-items:center;justify-self:end;transition:background .4s,color .4s,border-color .4s,transform .5s var(--ease);}
+.rowi .go svg{width:14px;height:14px;}
+.rowi:hover .go{background:var(--red);color:#fff;border-color:transparent;transform:rotate(45deg);}
+@media(max-width:760px){
+  .rowi{grid-template-columns:1fr 40px;gap:8px;}
+  .rowi .tag{grid-column:1;}
+  .rowi .lat{grid-column:1;}
+  .rowi .go{grid-row:1/3;grid-column:2;align-self:center;}
+}
+#peek{
+  position:fixed;z-index:120;width:230px;height:168px;border-radius:16px;overflow:hidden;
+  pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.86) rotate(-5deg);
+  transition:opacity .35s var(--ease),transform .5s var(--ease);
+  box-shadow:var(--shadow-lg);
+}
+#peek.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg);}
+@media(max-width:900px){#peek{display:none;}}

@@ -1,0 +1,48 @@
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:15px 18px 15px 26px;border-radius:999px;
+  font-size:15px;font-weight:600;line-height:1;white-space:nowrap;
+  transition:transform .45s var(--ease),box-shadow .45s var(--ease),background .3s;
+  will-change:transform;
+}
+/* a request is in flight: the button stays where it is and stops accepting a
+   second click, rather than moving or swapping for a spinner */
+.btn[disabled]{opacity:.55;pointer-events:none;}
+.btn .arw{
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
+  transition:transform .5s var(--ease);
+}
+.btn .arw svg{width:13px;height:13px;}
+.btn:hover .arw{transform:rotate(45deg);}
+.btn-primary{background:var(--ink);color:#fff;box-shadow:0 18px 34px -20px rgba(14,18,22,.7);}
+.btn-primary .arw{background:var(--red);color:#fff;}
+.btn-primary:hover{box-shadow:0 26px 44px -20px rgba(14,18,22,.7);}
+.btn-red{background:linear-gradient(180deg,var(--red-2),var(--red));color:#fff;box-shadow:0 20px 40px -20px rgba(225,39,48,.65),inset 0 1px 0 rgba(255,255,255,.25);}
+.btn-red .arw{background:rgba(255,255,255,.2);color:#fff;}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line-3);padding:15px 24px;}
+.btn-ghost:hover{background:#fff;border-color:transparent;box-shadow:var(--shadow-sm);}
+.btn-white{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
+.btn-white .arw{background:var(--red);color:#fff;}
+.btn-sm{padding:11px 13px 11px 20px;font-size:14px;}
+.btn-sm .arw{width:26px;height:26px;}
+
+.link-u{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;border-bottom:1px solid var(--line-3);padding-bottom:3px;transition:gap .3s var(--ease),border-color .3s;}
+.link-u:hover{gap:13px;border-color:var(--red);}
+
+/* ==========================================================================
+   IMAGE FRAME + PLACEHOLDER
+   ========================================================================== */
+.media{position:relative;overflow:hidden;background:var(--paper-2);}
+.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+.media .ph{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:
+    repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 2px,transparent 2px 12px),
+    linear-gradient(150deg,#E7E9EC 0%,#DFE3E7 42%,#E9E4E1 100%);
+  color:#9AA3AD;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:16px;
+}
+.media .ph svg{width:26px;height:26px;opacity:.55;}
+.media .ph b{font-weight:600;text-transform:none;letter-spacing:0;font-size:11.5px;opacity:.85;}

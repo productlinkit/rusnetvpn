@@ -1,0 +1,146 @@
+/* ==========================================================================
+   PROGRESS + HEADER
+   ========================================================================== */
+#prog{position:fixed;top:0;left:0;height:2px;width:0;background:var(--red);z-index:200;transition:width .1s linear;}
+
+/* no card, no pill, no border — the header is just type sitting on the page.
+   once you scroll, a soft wash fades in behind it so the links stay readable
+   over photos and the navy band. it has no edge, so it never reads as a box. */
+header{position:fixed;top:0;left:0;right:0;z-index:150;padding-block:16px;transition:padding .4s var(--ease);}
+header::before{
+  content:"";position:absolute;inset:-16px 0 -28px;pointer-events:none;
+  background:linear-gradient(180deg,var(--paper) 0%,rgba(243,242,239,.92) 52%,rgba(243,242,239,0) 100%);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  -webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 62%,transparent 100%);
+  opacity:0;transition:opacity .4s var(--ease);
+}
+header.small{padding-block:11px;}
+header.small::before{opacity:1;}
+.nav{
+  position:relative;z-index:2;
+  max-width:calc(var(--maxw) + 40px);margin:0 auto;
+  display:flex;align-items:center;gap:18px;min-width:0;
+}
+@media(max-width:1380px){.nav{margin-inline:var(--pad);}}
+/* the wordmark IS the logo, so there is no separate text node to line up */
+.brand{display:flex;align-items:center;flex:0 0 auto;color:var(--ink);}
+.brand-logo{height:21px;width:auto;display:block;}
+/* one line, always. links never wrap onto a second row. */
+.navlinks{display:flex;align-items:center;gap:2px;margin-left:6px;flex-wrap:nowrap;min-width:0;}
+.navlinks a{font-size:14.5px;font-weight:500;color:var(--body);padding:9px 13px;border-radius:999px;white-space:nowrap;transition:color .25s,background .25s;}
+.navlinks a:hover{color:var(--ink);background:rgba(14,18,22,.05);}
+.navact{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.navact .signin{font-size:14.5px;font-weight:500;padding:9px 14px;color:var(--body);white-space:nowrap;}
+.navact .signin:hover{color:var(--ink);}
+.burger{display:none;width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;place-items:center;flex:0 0 auto;}
+.burger span{display:block;width:16px;height:1.6px;background:#fff;border-radius:2px;transition:transform .4s var(--ease),opacity .3s;}
+.burger span+span{margin-top:4px;}
+body.menu-open .burger span:nth-child(1){transform:translateY(5.6px) rotate(45deg);}
+body.menu-open .burger span:nth-child(2){opacity:0;}
+body.menu-open .burger span:nth-child(3){transform:translateY(-5.6px) rotate(-45deg);}
+/* six links + a button + the language picker stop fitting well before 1080,
+   which is where they used to spill. collapse earlier instead. */
+@media(max-width:1180px){
+  .navlinks{display:none;}
+  .navact .signin{display:none;}
+  .burger{display:grid;}
+}
+/* narrow phones: brand, language, burger. the CTA lives in the sheet. */
+@media(max-width:560px){
+  .navact .btn-primary{display:none;}
+  .navact{gap:6px;}
+  .brand-logo{height:19px;}
+}
+.sheet{
+  position:fixed;inset:0;z-index:140;background:var(--paper);
+  padding:100px var(--pad) 48px;display:flex;flex-direction:column;gap:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  opacity:0;visibility:hidden;transform:translateY(-12px);transition:opacity .4s var(--ease),transform .5s var(--ease),visibility .4s;
+}
+body.menu-open .sheet{opacity:1;visibility:visible;transform:none;}
+/* direct children only — this used to hit the two buttons further down and
+   flatten them, since the reset that followed killed their padding outright */
+.sheet > a{
+  font-size:clamp(26px,6.6vw,38px);font-weight:700;letter-spacing:-.03em;
+  padding:17px 0;border-bottom:1px solid var(--line-2);
+}
+.sheet > a:last-of-type{border-bottom:0;}
+/* full-width stacked buttons: real tap targets, and they keep .btn's padding */
+.sheet .sheet-cta{margin-top:30px;display:grid;gap:10px;}
+.sheet .sheet-cta a{font-size:15.5px;justify-content:center;padding:17px 22px;}
+.sheet .sheet-cta .arw{margin-left:2px;}
+
+/* ---------- language picker ----------
+   a dropdown, not a row of chips: two languages today, room for more later
+   without the bar getting any wider. */
+.lang{position:relative;flex:0 0 auto;}
+.lang-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 11px 8px 10px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.6);
+  font-size:13px;font-weight:600;line-height:1;color:var(--ink);white-space:nowrap;
+  transition:border-color .3s,background .3s,box-shadow .3s;
+}
+.lang-btn:hover{border-color:transparent;background:#fff;box-shadow:var(--shadow-xs);}
+.lang-btn .globe{width:15px;height:15px;color:var(--body);flex:0 0 auto;}
+.lang-btn .code{letter-spacing:.06em;}
+.lang-btn .chev{width:11px;height:11px;color:var(--muted);transition:transform .35s var(--ease);}
+.lang.on .lang-btn .chev{transform:rotate(180deg);}
+.lang-menu{
+  position:absolute;top:calc(100% + 9px);right:0;z-index:5;width:184px;
+  background:#fff;border:1px solid var(--line-2);border-radius:16px;
+  box-shadow:var(--shadow-md);padding:6px;
+  opacity:0;visibility:hidden;transform:translateY(-6px);
+  transition:opacity .28s,transform .32s var(--ease),visibility .28s;
+}
+.lang.on .lang-menu{opacity:1;visibility:visible;transform:none;}
+.lang-menu button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 11px;border-radius:11px;font-size:14px;color:var(--body);
+  transition:background .25s,color .25s;
+}
+.lang-menu button:hover{background:var(--paper);color:var(--ink);}
+.lang-menu button.on{color:var(--ink);font-weight:600;}
+.lang-menu button .ab{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);}
+.lang-menu button .tickmark{width:14px;height:14px;color:var(--red);opacity:0;flex:0 0 auto;}
+.lang-menu button.on .tickmark{opacity:1;}
+/* the picker stays in the bar at every width — the sheet does not repeat it */
+@media(max-width:560px){
+  .lang-btn{padding:7px 9px 7px 9px;gap:6px;font-size:12.5px;}
+  .lang-menu{width:172px;}
+}
+
+/* ---------- signed-in state ---------- */
+.acct{position:relative;display:none;}
+body.is-auth .acct{display:block;}
+body.is-auth .navact .signin,
+body.is-auth .navact .btn-primary{display:none;}
+/* on phones the dropdown has nowhere to go, so the avatar stops being a menu
+   and becomes a direct link into the account page. the JS matches this. */
+@media(max-width:1180px){
+  .acct-btn{padding:5px;}
+  .acct-name,.acct-btn .chev{display:none;}
+  .acct-menu{display:none;}
+}
+.acct-btn{display:flex;align-items:center;gap:9px;padding:6px 14px 6px 6px;border-radius:999px;border:1px solid var(--line);background:#fff;transition:box-shadow .3s,border-color .3s;}
+.acct-btn:hover{border-color:transparent;box-shadow:var(--shadow-sm);}
+.ava{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(160deg,var(--red-2),var(--red-deep));color:#fff;font-size:13px;font-weight:700;line-height:1;}
+.ava.lg{width:40px;height:40px;font-size:16px;}
+.acct-name{font-size:14px;font-weight:600;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acct-btn .chev{width:12px;height:12px;color:var(--muted);transition:transform .35s var(--ease);}
+.acct.on .acct-btn .chev{transform:rotate(180deg);}
+.acct-menu{position:absolute;top:calc(100% + 12px);right:0;width:266px;background:#fff;border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--shadow-md);padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s,transform .35s var(--ease),visibility .3s;}
+.acct.on .acct-menu{opacity:1;visibility:visible;transform:none;}
+.acct-head{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line-2);margin-bottom:6px;}
+.acct-id{display:flex;flex-direction:column;min-width:0;}
+.acct-id b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acct-id i{font-style:normal;font-size:12px;color:var(--muted);margin-top:2px;}
+.acct-menu a,.acct-menu button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:11px;font-size:14px;color:var(--body);transition:background .25s,color .25s;}
+.acct-menu a:hover,.acct-menu button:hover{background:var(--paper);color:var(--ink);}
+.acct-menu .out{color:var(--red);font-weight:600;border-top:1px solid var(--line-2);border-radius:0;margin-top:6px;padding-top:13px;}
+.sheet-acct{display:none;align-items:center;gap:12px;margin-top:30px;padding:16px;border:1px solid var(--line);border-radius:18px;}
+body.is-auth .sheet-acct{display:flex;}
+/* signed out shows Login + Subscribe, signed in swaps to My Account + Log out */
+body.is-auth #sheet-guest-cta{display:none;}
+body.is-auth #sheet-acct-cta{display:grid !important;}

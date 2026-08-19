@@ -1,0 +1,64 @@
+/* ==========================================================================
+   RAIL — expanding cards (click to open, siblings shrink)
+   ========================================================================== */
+.rail{display:flex;gap:12px;height:clamp(420px,50vw,560px);}
+.rcard{
+  position:relative;flex:1 1 0;min-width:0;overflow:hidden;
+  border-radius:var(--r-lg);cursor:pointer;text-align:left;
+  transition:flex-grow .75s var(--ease),box-shadow .6s var(--ease);
+  box-shadow:var(--shadow-sm);
+}
+.rail.has-open .rcard{flex-grow:.7;}
+.rail .rcard.is-open{flex-grow:3.1;box-shadow:var(--shadow-lg);}
+.rcard .media{position:absolute;inset:0;}
+.rcard .media img{object-position:50% 34%;transition:transform 1s var(--ease),filter .6s;transform:scale(1.06);filter:saturate(.9);}
+.rcard.is-open .media img{transform:scale(1);filter:saturate(1.05);}
+.rcard .veil{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(14,18,22,.34) 0%,rgba(14,18,22,.05) 34%,rgba(14,18,22,.82) 100%);transition:background .6s;}
+/* a collapsed card is a narrow slice of a bright app screen, so darken it enough
+   for the vertical label to read. the open card keeps the light gradient. */
+.rail.has-open .rcard:not(.is-open) .veil{background:linear-gradient(180deg,rgba(10,14,20,.66),rgba(10,14,20,.8));}
+.rcard .num{position:absolute;z-index:4;top:20px;left:20px;font-size:12px;font-weight:700;letter-spacing:.1em;color:#fff;opacity:.72;}
+.rcard .vert{
+  position:absolute;z-index:4;left:0;right:0;bottom:22px;display:grid;place-items:center;
+  transition:opacity .4s;
+}
+.rcard .vert span{
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  font-size:clamp(15px,1.3vw,18px);font-weight:700;letter-spacing:-.02em;color:#fff;
+  white-space:nowrap;
+}
+.rcard.is-open .vert{opacity:0;pointer-events:none;}
+.rcard .full{
+  position:absolute;z-index:4;left:0;bottom:0;padding:clamp(20px,2.2vw,32px);
+  width:min(430px,86%);opacity:0;transform:translateY(14px);pointer-events:none;
+  transition:opacity .5s .12s var(--ease),transform .6s .12s var(--ease);
+}
+.rcard.is-open .full{opacity:1;transform:none;pointer-events:auto;}
+.rcard .full h3{color:#fff;margin-bottom:10px;}
+.rcard .full p{color:rgba(255,255,255,.78);font-size:15px;line-height:1.55;}
+/* hugs its label — it is a tag, not a call to action, so it stays slim */
+.rcard .full .pill{
+  display:inline-flex;width:fit-content;max-width:100%;align-items:center;gap:7px;
+  margin-top:15px;padding:6px 12px;border-radius:999px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);
+  color:#fff;font-size:12.5px;font-weight:600;line-height:1.35;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.rcard .full .pill svg{width:12px;height:12px;flex:0 0 auto;}
+.rcard .plus{
+  position:absolute;z-index:4;top:16px;right:16px;width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);
+  display:grid;place-items:center;color:#fff;transition:transform .5s var(--ease),background .4s;
+}
+.rcard.is-open .plus{transform:rotate(45deg);background:var(--red);border-color:transparent;}
+.rcard .plus svg{width:13px;height:13px;}
+@media(max-width:900px){
+  .rail{flex-direction:column;height:auto;gap:10px;}
+  .rcard{flex:0 0 auto;height:88px;transition:height .7s var(--ease);}
+  .rail.has-open .rcard{flex-grow:1;}
+  .rail .rcard.is-open{height:clamp(400px,86vw,470px);}
+  .rcard .vert{bottom:0;top:0;left:22px;right:60px;place-items:center start;}
+  .rcard .vert span{writing-mode:horizontal-tb;transform:none;}
+  .rcard .full{width:100%;}
+  .rcard .num{display:none;}
+}

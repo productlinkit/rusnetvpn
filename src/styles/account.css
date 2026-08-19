@@ -1,0 +1,188 @@
+/* ==========================================================================
+   MY ACCOUNT — full page, one panel per feature
+   ========================================================================== */
+.account{position:fixed;inset:0;z-index:290;overflow:auto;background:var(--paper);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility .35s;}
+.account.is-open{opacity:1;visibility:visible;}
+
+.ac-top{
+  position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:16px;
+  padding:16px clamp(20px,4vw,48px);background:rgba(243,242,239,.86);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line-2);
+}
+.ac-top .brand{margin-right:auto;}
+.ac-top .ava{width:34px;height:34px;}
+.ac-back{display:inline-flex;align-items:center;gap:9px;padding:10px 17px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;color:var(--body);transition:color .3s,background .3s,border-color .3s,gap .3s var(--ease);}
+.ac-back:hover{color:var(--ink);background:#fff;border-color:transparent;gap:13px;}
+.ac-back svg{width:13px;height:13px;}
+
+/* minmax(0,…) on every track, and min-width:0 on both children. without it the
+   tracks take their automatic minimum from content, and the tab strip reports
+   the full width of all seven chips, dragging the whole page wider than the
+   phone. the strip is meant to scroll inside its column, not stretch it. */
+.ac-body{display:grid;grid-template-columns:minmax(0,268px) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start;padding-block:clamp(26px,4vw,48px) 80px;}
+.ac-nav,.ac-main{min-width:0;}
+
+/* ---------- left rail ---------- */
+.ac-nav{position:sticky;top:96px;display:flex;flex-direction:column;gap:6px;}
+.ac-me{display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--line-2);margin-bottom:10px;}
+.ac-me .who{display:flex;flex-direction:column;min-width:0;}
+.ac-me b{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ac-me i{font-style:normal;font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ac-link{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:11px 14px;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--body);
+  transition:background .25s,color .25s;
+}
+.ac-link svg{width:17px;height:17px;flex:0 0 auto;opacity:.7;}
+.ac-link:hover{background:rgba(14,18,22,.05);color:var(--ink);}
+.ac-link.on{background:var(--ink);color:#fff;font-weight:600;}
+.ac-link.on svg{opacity:1;}
+.ac-link .pip{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--red);}
+.ac-out{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-2);color:var(--red);font-weight:600;}
+
+/* ---------- panels ---------- */
+.ac-panel{display:none;}
+.ac-panel.on{display:block;animation:acIn .45s var(--ease) both;}
+@keyframes acIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.ac-head{margin-bottom:clamp(20px,2.6vw,30px);}
+.ac-head h2{font-size:clamp(24px,3vw,36px);}
+.ac-head p{color:var(--body);font-size:15px;margin-top:8px;max-width:60ch;}
+
+.ac-card{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:clamp(20px,2.4vw,28px);}
+.ac-card + .ac-card{margin-top:14px;}
+.ac-card h3{font-size:17px;margin-bottom:4px;}
+.ac-card .sub{font-size:13.5px;color:var(--muted);}
+.ac-card.dark{background:var(--ink);border-color:transparent;color:#fff;position:relative;overflow:hidden;}
+.ac-card.dark::after{content:"";position:absolute;right:-14%;top:-60%;width:56%;height:200%;background:radial-gradient(circle,rgba(225,39,48,.34),transparent 62%);pointer-events:none;}
+.ac-card.dark > *{position:relative;z-index:2;}
+.ac-card.dark h3,.ac-card.dark b{color:#fff;}
+.ac-card.dark .sub{color:rgba(255,255,255,.55);}
+.ac-card.danger{border-color:rgba(225,39,48,.24);background:#FFF8F8;}
+
+.ac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+.ac-stat{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-md);padding:20px;}
+.ac-stat .k{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.ac-stat .v{font-size:clamp(22px,2.4vw,30px);font-weight:700;letter-spacing:-.03em;margin-top:10px;line-height:1.1;}
+.ac-stat .v em{font-style:normal;color:var(--red);}
+.ac-stat .n{font-size:13px;color:var(--body);margin-top:6px;}
+
+.ac-row{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line-2);}
+.ac-row:last-child{border-bottom:0;padding-bottom:0;}
+.ac-row:first-child{padding-top:0;}
+.ac-row .txt{min-width:0;flex:1;overflow-wrap:break-word;}
+.ac-row .txt b{display:block;font-size:14.5px;font-weight:600;}
+.ac-row .txt span{display:block;font-size:13px;color:var(--muted);margin-top:3px;}
+.ac-row .act{margin-left:auto;flex:0 0 auto;}
+.ac-ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;background:var(--paper-2);color:var(--body);}
+.ac-ic svg{width:17px;height:17px;}
+.ac-ic.red{background:var(--red-tint);color:var(--red);}
+
+/* started / renews / paid with — a row on desktop, two neat columns on a phone
+   rather than three items wrapping into a ragged 2 + 1 */
+.ac-facts{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;}
+.ac-facts b{font-size:15px;}
+@media(max-width:560px){
+  .ac-facts{display:grid;grid-template-columns:1fr 1fr;gap:16px 14px;}
+  .ac-facts > div:last-child{grid-column:span 2;}
+}
+
+/* toggle */
+.sw{position:relative;width:46px;height:27px;border-radius:999px;background:var(--line-3);flex:0 0 auto;transition:background .3s;}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(14,18,22,.28);transition:transform .34s var(--ease);}
+.sw.on{background:var(--red);}
+.sw.on::after{transform:translateX(19px);}
+
+/* small pill states */
+.ac-tag{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1;}
+.ac-tag.good{background:#E9F9F0;color:#0B8A4E;}
+.ac-tag.warn{background:#FFF4E5;color:#B54708;}
+.ac-tag.off{background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);}
+
+/* invoices */
+.ac-table{width:100%;border-collapse:collapse;font-size:14px;}
+.ac-table th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-bottom:12px;border-bottom:1px solid var(--line-2);}
+.ac-table td{padding:15px 0;border-bottom:1px solid var(--line-2);vertical-align:middle;}
+.ac-table tr:last-child td{border-bottom:0;}
+.ac-table .amt{font-weight:700;font-variant-numeric:tabular-nums;}
+.ac-table .dl{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--body);}
+.ac-table .dl:hover{color:var(--red);}
+.ac-table .dl svg{width:14px;height:14px;}
+/* the table needs a floor to push against, otherwise it obeys width:100% and
+   crushes five columns into a phone instead of letting the wrapper scroll */
+.ac-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.ac-scroll .ac-table{min-width:480px;}
+
+/* usage meter */
+.meter{height:7px;border-radius:999px;background:var(--paper-2);overflow:hidden;margin-top:14px;}
+.meter i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red-2),var(--red));transition:width .6s var(--ease);}
+
+.ac-note{font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.5;}
+.ac-ok{display:none;align-items:center;gap:10px;margin-top:16px;padding:13px 15px;border-radius:12px;background:#E9F9F0;color:#0B8A4E;font-size:13.5px;font-weight:600;}
+.ac-ok.on{display:flex;}
+.ac-ok svg{width:15px;height:15px;flex:0 0 auto;}
+/* the same strip when the server refused — same shape, the red the forms use */
+.ac-bad{display:none;align-items:flex-start;gap:10px;margin-top:16px;padding:13px 15px;border-radius:12px;background:#FFF3F3;color:var(--red-deep);font-size:13.5px;font-weight:500;line-height:1.45;}
+.ac-bad.on{display:flex;}
+.ac-bad svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--red);}
+/* "loading", "nothing here yet" — a line of quiet text where content will be */
+.ac-quiet{font-size:13.5px;color:var(--muted);padding:16px 0;line-height:1.5;}
+.ac-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+
+@media(max-width:900px){
+  .ac-body{grid-template-columns:minmax(0,1fr);gap:22px;}
+  .ac-nav{position:static;gap:12px;min-width:0;}
+  /* the rail becomes one scrollable row of chips */
+  .ac-nav .ac-tabs{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;
+    min-width:0;max-width:100%;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .ac-nav .ac-tabs::-webkit-scrollbar{display:none;}
+  /* width:100% comes from the sidebar layout, where filling the column is the
+     point. left in place out here it made every chip as wide as the whole
+     strip, so only the first tab was ever on screen. */
+  .ac-link{
+    width:auto;flex:0 0 auto;white-space:nowrap;
+    padding:11px 16px;border:1px solid var(--line-2);background:var(--card);
+  }
+  .ac-link.on{border-color:transparent;}
+  .ac-link .pip{display:none;}
+  .ac-me{margin-bottom:0;}
+  /* same fix, plus the divider it used as a separator in the sidebar has to
+     become a full border now that it is a standalone chip */
+  .ac-out{
+    width:auto;align-self:flex-start;margin-top:0;padding:11px 16px;
+    border:1px solid rgba(225,39,48,.22);background:#FFF8F8;
+  }
+  /* only fades while there is actually something further along to scroll to */
+  .ac-tabs.can-scroll{
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+            mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+  }
+}
+@media(min-width:901px){
+  .ac-nav .ac-tabs{display:flex;flex-direction:column;gap:4px;}
+}
+@media(max-width:640px){
+  .ac-top{padding:12px var(--pad);gap:10px;}
+  /* the label goes, the arrow stays — it is still an obvious way back */
+  .ac-back{padding:10px;gap:0;font-size:0;}
+  .ac-back svg{width:15px;height:15px;}
+  .ac-head h2{font-size:clamp(22px,6.4vw,30px);}
+  .ac-card,.ac-stat{padding:18px;}
+  .ac-grid{gap:10px;}
+  .ac-body{padding-bottom:56px;}
+}
+@media(max-width:560px){
+  /* a row wraps only when its label and its action genuinely cannot share the
+     line. switches and badges are narrow enough to stay put; buttons are not,
+     so they drop to a full-width line of their own. */
+  .ac-row{flex-wrap:wrap;gap:12px;}
+  /* narrow enough that a switch or a badge still fits beside it, wide enough
+     that a button cannot, which is exactly the split we want */
+  .ac-row .txt{flex:1 1 140px;}
+  .ac-row .btn.act{flex:1 1 100%;margin-left:0;justify-content:center;}
+  .ac-actions{gap:8px;}
+  .ac-actions .btn{width:100%;justify-content:center;}
+}

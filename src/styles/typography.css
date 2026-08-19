@@ -1,0 +1,32 @@
+/* ==========================================================================
+   TYPE
+   ========================================================================== */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--red);background:var(--red-tint);
+  padding:8px 14px;border-radius:999px;line-height:1;
+  border:1px solid rgba(225,39,48,.14);
+}
+.eyebrow.is-neutral{color:var(--ink);background:rgba(14,18,22,.05);border-color:var(--line-2);}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* headings are Host Grotesk too — stated outright so nothing can inherit past it */
+h1,h2,h3,h4{
+  font-family:var(--font);
+  font-weight:700;letter-spacing:-.032em;line-height:1.03;
+  overflow-wrap:break-word;
+}
+h1{font-size:clamp(34px,6vw,80px);}
+h2{font-size:clamp(27px,4.1vw,54px);line-height:1.06;}
+h3{font-size:clamp(18px,1.5vw,23px);letter-spacing:-.02em;line-height:1.2;}
+/* accent word inside a heading — same Host Grotesk, lighter weight. No italics, no second family. */
+.serif{font-weight:300;font-style:normal;letter-spacing:-.026em;}
+.lead{font-size:clamp(16px,1.25vw,18.5px);color:var(--body);line-height:1.6;}
+.small{font-size:14px;color:var(--body);}
+.tiny{font-size:12.5px;color:var(--muted);}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;margin-bottom:clamp(32px,4vw,54px);}
+.sec-head .col{max-width:640px;display:flex;flex-direction:column;gap:18px;align-items:flex-start;}
+.sec-head .aside{max-width:330px;color:var(--body);font-size:15px;padding-bottom:6px;}

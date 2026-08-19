@@ -1,0 +1,108 @@
+/* ==========================================================================
+   AUTH MODAL
+   ========================================================================== */
+/* a full page, not a modal: it takes the whole viewport over */
+.auth{position:fixed;inset:0;z-index:300;overflow:auto;background:var(--card);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility .35s;}
+.auth.is-open{opacity:1;visibility:visible;}
+.auth-scrim{display:none;}
+.auth-card{
+  position:relative;width:100%;min-height:100%;
+  background:var(--card);
+  display:grid;grid-template-columns:.9fr 1.1fr;
+}
+@media(max-width:820px){.auth-card{grid-template-columns:1fr;}}
+
+.auth-side{
+  position:relative;background:var(--navy);color:#fff;overflow:hidden;
+  padding:clamp(28px,3.6vw,64px);display:flex;flex-direction:column;gap:24px;
+}
+.auth-side::before{content:"";position:absolute;inset:0;z-index:2;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;}
+.auth-side::after{content:"";position:absolute;z-index:2;right:-30%;bottom:-30%;width:80%;height:80%;background:radial-gradient(circle,rgba(225,39,48,.24),transparent 62%);}
+.auth-side > *{position:relative;z-index:3;}
+/* photo sits under a black wash: still reads as a photo, never fights the copy */
+.auth-side .auth-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;}
+.auth-side .auth-veil{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.40) 0%,rgba(0,0,0,.68) 46%,rgba(0,0,0,.9) 100%);}
+.auth-side .brand{color:#fff;}
+.auth-side p{font-size:clamp(18px,1.7vw,25px);font-weight:600;letter-spacing:-.025em;color:rgba(255,255,255,.9);line-height:1.32;max-width:19ch;margin-top:auto;}
+.auth-side ul{list-style:none;display:flex;flex-direction:column;gap:13px;padding-top:6px;}
+.auth-side li{display:flex;gap:11px;font-size:14px;color:rgba(255,255,255,.7);align-items:flex-start;}
+.auth-side li b{color:#fff;font-weight:700;}
+.auth-side li i{width:5px;height:5px;border-radius:50%;background:var(--red-2);flex:0 0 auto;margin-top:7px;}
+/* the form column is taller than the viewport, so pin the panel instead of letting
+   its last bullet scroll off the bottom */
+@media(min-width:821px){.auth-side{position:sticky;top:0;height:100vh;height:100dvh;}}
+@media(max-width:820px){.auth-side{display:none;}}
+
+.auth-main{position:relative;padding:clamp(20px,2.4vw,40px);display:flex;flex-direction:column;}
+.auth-top{display:flex;align-items:center;gap:16px;}
+.auth-top .brand{display:none;}
+.auth-back{display:inline-flex;align-items:center;gap:9px;margin-left:auto;padding:11px 18px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;color:var(--body);transition:color .3s,background .3s,border-color .3s,gap .3s var(--ease);}
+.auth-back:hover{color:var(--ink);background:var(--paper);border-color:transparent;gap:13px;}
+.auth-back svg{width:13px;height:13px;}
+.auth-inner{width:100%;max-width:436px;margin:auto;padding-block:clamp(26px,4vh,56px);opacity:0;transform:translateY(12px);transition:opacity .5s .1s var(--ease),transform .6s .1s var(--ease);}
+.auth.is-open .auth-inner{opacity:1;transform:none;}
+@media(max-width:820px){.auth-top .brand{display:flex;}.auth-inner{margin-top:clamp(20px,6vh,52px);}}
+.auth-tabs{display:inline-flex;align-self:flex-start;gap:3px;padding:4px;border-radius:999px;background:var(--paper-2);margin-bottom:24px;}
+.auth-tabs button{padding:9px 18px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--body);transition:background .3s,color .3s,box-shadow .3s;}
+.auth-tabs button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-xs);}
+.auth-main h3{font-size:clamp(21px,2.2vw,26px);}
+.auth-sub{font-size:14.5px;color:var(--body);margin-top:8px;}
+
+.auth-google{
+  display:flex;align-items:center;justify-content:center;gap:11px;width:100%;margin-top:22px;
+  padding:14px 18px;border-radius:14px;border:1px solid var(--line);background:#fff;
+  font-size:14.5px;font-weight:600;transition:border-color .3s,box-shadow .3s,transform .3s var(--ease);
+}
+.auth-google:hover{border-color:transparent;box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+.auth-google svg{width:17px;height:17px;}
+.auth-or{display:flex;align-items:center;gap:12px;margin:20px 0 4px;color:var(--muted);font-size:12px;}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line);}
+
+.auth-form{display:flex;flex-direction:column;}
+.fld{display:flex;flex-direction:column;gap:7px;margin-top:16px;}
+.fld > span{font-size:12.5px;font-weight:600;color:var(--body);}
+/* a select is a field like any other here — same plate, same focus ring —
+   so the cancel-reason chooser does not read as a browser control dropped
+   into the middle of a form */
+.fld select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238B949F' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l4 4 4-4'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center;background-size:14px;padding-right:40px;}
+.fld input,.fld select{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--paper);font-size:15px;outline:none;transition:border-color .25s,box-shadow .25s,background .25s;}
+.fld input::placeholder{color:var(--muted);}
+.fld input:focus,.fld select:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 3px rgba(225,39,48,.11);}
+.fld .err{display:none;font-style:normal;font-size:12.5px;color:var(--red);}
+.fld.bad input{border-color:var(--red);background:#FFF7F7;}
+.fld.bad .err{display:block;}
+.pwwrap{position:relative;display:block;}
+.pwwrap .peek{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted);transition:color .3s,background .3s;}
+.pwwrap .peek:hover{color:var(--ink);background:rgba(14,18,22,.05);}
+.pwwrap .peek svg{width:16px;height:16px;}
+.auth-row{display:flex;justify-content:flex-end;margin-top:12px;}
+.auth-row a{font-size:13px;font-weight:600;color:var(--body);border-bottom:1px solid var(--line-3);padding-bottom:2px;transition:color .25s,border-color .25s;}
+.auth-row a:hover{color:var(--red);border-color:var(--red);}
+.auth-submit{width:100%;justify-content:center;margin-top:22px;}
+.auth-fine{font-size:13.5px;color:var(--body);margin-top:18px;text-align:center;}
+.lnk{font-size:13.5px;font-weight:600;color:var(--red);border-bottom:1px solid rgba(225,39,48,.35);padding-bottom:1px;}
+.auth-terms{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5;text-align:center;}
+
+/* the server's own answer when it rejects the whole submission rather than one
+   field — wrong password, expired code, too many attempts. Same shape as the
+   green .ac-ok strip on the account page, in the red the form already uses. */
+.auth-alert{display:flex;align-items:flex-start;gap:10px;margin-top:18px;padding:13px 15px;border-radius:12px;background:#FFF3F3;border:1px solid rgba(225,39,48,.2);color:var(--red-deep);font-size:13.5px;line-height:1.45;font-weight:500;}
+.auth-alert svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--red);}
+
+/* sits under the new-password field: says what a valid one looks like before
+   the field has a chance to reject it */
+.auth-hint{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+.auth-hint b{color:var(--body);font-weight:600;}
+.auth-done{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding-block:10px;}
+.auth-done .done-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+@media(max-width:520px){
+  .auth-done .done-actions{display:grid;width:100%;}
+  .auth-done .done-actions .btn{justify-content:center;}
+}
+.auth-done .tickbig{width:52px;height:52px;border-radius:50%;background:#E9F9F0;color:#0B8A4E;display:grid;place-items:center;}
+.auth-done .tickbig svg{width:22px;height:22px;}
+.auth-done p{font-size:14.5px;color:var(--body);line-height:1.6;}
+.auth-done p b{color:var(--ink);}
+.auth-done .note{font-size:12px;color:var(--muted);}

@@ -1,0 +1,63 @@
+/* ==========================================================================
+   PRICING
+   ========================================================================== */
+.price-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;align-items:stretch;}
+@media(max-width:920px){.price-grid{grid-template-columns:1fr;}}
+/* a grid of equal cells, not a wrapping flex row. wrapping left a ragged second
+   row and dropped the Best Deal badge on top of the row above it. */
+.seg{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:3px;
+  width:100%;max-width:540px;
+  padding:4px;border-radius:999px;background:var(--paper-2);
+}
+.seg button{
+  padding:11px 6px;border-radius:999px;
+  font-size:13.5px;font-weight:600;color:var(--body);text-align:center;white-space:nowrap;
+  transition:background .35s,color .35s,box-shadow .35s;position:relative;
+}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-xs);}
+.seg button .best{position:absolute;top:-9px;right:-6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;}
+@media(max-width:620px){
+  /* two per row, with the best-value option owning the full last row. every
+     cell ends up the same width and the rows line up. */
+  .seg{grid-template-columns:repeat(2,1fr);gap:4px;padding:5px;border-radius:22px;}
+  .seg button{padding:14px 8px;font-size:14px;border-radius:17px;}
+  .seg button:last-child{grid-column:span 2;}
+  /* inline now that it has a full row to sit on, so it stops overlapping */
+  .seg button .best{position:static;display:inline-block;margin-left:9px;vertical-align:1px;}
+}
+.pcard{background:var(--card);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);border:1px solid var(--line-2);display:flex;flex-direction:column;}
+.pcard .amt{display:flex;align-items:flex-start;gap:6px;margin-top:26px;}
+.pcard .amt .cur{font-size:26px;font-weight:600;margin-top:10px;color:var(--body);}
+.pcard .amt .val{font-size:clamp(52px,7vw,86px);font-weight:700;letter-spacing:-.05em;line-height:.92;transition:opacity .3s,transform .35s var(--ease);}
+.pcard .amt.flip .val{opacity:0;transform:translateY(-8px);}
+.pcard .per{font-size:14.5px;color:var(--body);margin-top:14px;}
+.pcard .per b{color:var(--ink);}
+.pcard .save{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;border-radius:999px;background:#E9F9F0;color:#0B8A4E;font-size:12.5px;font-weight:700;}
+.pcard .feat{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:30px;padding-top:26px;border-top:1px solid var(--line-2);}
+.pcard .feat li{display:flex;gap:10px;font-size:14.5px;color:var(--body);}
+.pcard .feat svg{width:15px;height:15px;color:var(--red);flex:0 0 auto;margin-top:4px;}
+@media(max-width:560px){.pcard .feat{grid-template-columns:1fr;}}
+.pcard .btn{margin-top:auto;align-self:flex-start;}
+.pcard .fine{font-size:12.5px;color:var(--muted);margin-top:14px;}
+.trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:26px;position:relative;overflow:hidden;}
+.trial::after{content:"";position:absolute;bottom:-40%;left:-20%;width:70%;height:100%;background:radial-gradient(circle,rgba(37,99,235,.35),transparent 65%);}
+.trial h3{color:#fff;font-size:clamp(24px,2.6vw,34px);position:relative;z-index:2;}
+.trial p{color:rgba(255,255,255,.66);font-size:15px;margin-top:12px;position:relative;z-index:2;}
+.trial .paylist{display:flex;flex-wrap:wrap;gap:7px;position:relative;z-index:2;}
+/* white chips: half these marks are black or near-black, so on the dark card
+   they need their own light plate rather than a recolour that breaks the brand */
+.trial .paylist span{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 11px;border-radius:10px;
+  background:#fff;color:var(--ink);
+  font-size:11.5px;font-weight:600;line-height:1;white-space:nowrap;
+}
+/* sized per logo, not one blanket height — each mark carries a different amount
+   of ascender and descender, so a single height makes them look uneven */
+.paylogo{width:auto;display:block;flex:0 0 auto;}
+.paylogo.pl-card{height:17px;}
+.paylogo.pl-paypal{height:17px;}
+.paylogo.pl-apple{height:16px;}
+.paylogo.pl-google{height:16px;}
+.paylogo.pl-stripe{height:18px;}

@@ -1,0 +1,83 @@
+/* ==========================================================================
+   APPS
+   ========================================================================== */
+.apps{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(40px,5vw,84px) clamp(24px,3.6vw,72px);position:relative;overflow:hidden;}
+.apps::before{content:"";position:absolute;top:-30%;right:-10%;width:60%;height:120%;background:radial-gradient(circle,rgba(225,39,48,.28),transparent 62%);pointer-events:none;}
+.apps .eyebrow{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.14);}
+.apps h2{color:#fff;font-size:clamp(28px,3.4vw,46px);}
+.apps .lead{color:rgba(255,255,255,.66);max-width:58ch;}
+.apps-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:clamp(36px,4.4vw,72px);align-items:center;position:relative;z-index:2;}
+/* below this the two columns get too tight — go full width and let the phones breathe */
+@media(max-width:1180px){
+  .apps-grid{grid-template-columns:minmax(0,1fr);gap:clamp(36px,5vw,56px);}
+}
+@media(max-width:1180px) and (min-width:721px){
+  .applist{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+}
+.tabs{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);flex-wrap:nowrap;max-width:100%;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tabs button{flex:0 0 auto;padding:9px 17px;border-radius:999px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.6);transition:background .35s,color .35s;}
+.tabs button.on{background:#fff;color:var(--ink);}
+.applist{display:flex;flex-direction:column;gap:14px;margin-top:28px;}
+.applist li{display:flex;gap:13px;align-items:flex-start;list-style:none;font-size:15px;color:rgba(255,255,255,.76);}
+.applist .tick{width:21px;height:21px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;flex:0 0 auto;margin-top:2px;}
+.applist .tick svg{width:11px;height:11px;color:var(--red-2);}
+/* a grid, not a wrapping flex row: six badges of six different widths read as
+   six loose links, one shared box reads as one set */
+.stores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:32px;max-width:530px;}
+/* the official store-badge lockup: black plate, hairline outline, brand logo
+   beside two lines of type — small caption sitting over the store name. Black
+   on the near-black panel would vanish, so the outline is what draws the shape. */
+.store{display:flex;align-items:center;justify-content:center;gap:11px;padding:12px 18px;border-radius:12px;
+  background:#000;border:1px solid rgba(255,255,255,.5);color:#fff;
+  transition:border-color .35s,transform .4s var(--ease),box-shadow .45s var(--ease);}
+.store:hover{border-color:#fff;transform:translateY(-2px);box-shadow:0 20px 36px -18px rgba(0,0,0,.95);}
+.store svg{width:29px;height:29px;flex:0 0 auto;}
+.store i{display:flex;flex-direction:column;justify-content:center;font-style:normal;text-align:left;}
+.store i span{font-size:10.5px;font-weight:500;letter-spacing:.02em;line-height:1.25;color:rgba(255,255,255,.88);}
+.store i b{font-size:18px;font-weight:600;letter-spacing:-.012em;line-height:1.15;}
+/* the apps column goes full width below 1180, so three across fits there */
+@media(max-width:1180px){.stores{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;}}
+@media(max-width:820px){.stores{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:430px){.stores{grid-template-columns:minmax(0,1fr);}}
+
+/* phones size against their own column, never the viewport — so they can't spill out */
+.phones{position:relative;display:flex;justify-content:center;align-items:center;gap:clamp(8px,1.2vw,18px);}
+.phone{
+  position:relative;border-radius:30px;overflow:hidden;background:#0A0D10;
+  border:6px solid #1B2129;box-shadow:0 40px 80px -30px rgba(0,0,0,.8);
+  width:min(29%,200px);min-width:104px;aspect-ratio:9/19.5;flex:0 0 auto;
+  transition:transform .7s var(--ease),opacity .5s;
+}
+.phone img{width:100%;height:100%;object-fit:cover;object-position:top;}
+.phone.p-side{transform:translateY(26px) scale(.9);opacity:.5;}
+.phones:hover .phone.p-side{opacity:.72;}
+.phone.p-main{z-index:3;transform:translateY(-14px);}
+@media(max-width:560px){.phone.p-side{display:none;}.phone.p-main{width:min(64%,220px);transform:none;}}
+
+/* pros & cons */
+.pc{margin-top:clamp(34px,4vw,58px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:clamp(22px,2.6vw,34px);position:relative;z-index:2;}
+.pc-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:24px;}
+.pc-head h3{color:#fff;}
+.pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,2.4vw,34px);}
+@media(max-width:700px){.pc-grid{grid-template-columns:1fr;}}
+.pc-col h4{font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;font-weight:700;}
+.pc-col.pro h4{color:#12B76A;}
+.pc-col.con h4{color:#F79009;}
+.pc-col ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
+.pc-col li{display:flex;gap:11px;font-size:14.5px;color:rgba(255,255,255,.74);line-height:1.5;}
+.pc-col li i{width:6px;height:6px;border-radius:50%;flex:0 0 auto;margin-top:8px;}
+.pc-col.pro li i{background:#12B76A;}
+.pc-col.con li i{background:#F79009;}
+
+/* ==========================================================================
+   FEATURE BAND (wide photo + copy)
+   ========================================================================== */
+.band{position:relative;border-radius:var(--r-xl);overflow:hidden;min-height:clamp(300px,34vw,420px);display:flex;align-items:flex-end;}
+.band .media{position:absolute;inset:0;}
+.band .veil{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(14,18,22,.15),rgba(14,18,22,.86));}
+.band .inner{position:relative;z-index:3;padding:clamp(26px,3.4vw,52px);color:#fff;max-width:620px;}
+.band h3{font-size:clamp(24px,3vw,38px);color:#fff;margin-bottom:12px;}
+.band p{color:rgba(255,255,255,.72);font-size:15.5px;}
+.band .addr{margin-top:20px;display:inline-flex;align-items:center;gap:9px;font-size:13px;color:rgba(255,255,255,.6);}
+.band .addr svg{width:14px;height:14px;}
