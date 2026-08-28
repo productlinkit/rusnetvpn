@@ -1,0 +1,17 @@
+# Pinned project name: without it Compose derives it from the directory
+# ("landing-page"), which collides with other repos that also have one.
+name: rusnetvpn-landing
+
+services:
+  landing-page:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8090/api/v1}
+        VITE_REQUEST_TIMEOUT_MS: ${VITE_REQUEST_TIMEOUT_MS:-15000}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    container_name: rusnetvpn_landing
+    ports:
+      - "${LANDING_PORT:-8082}:80"
+    restart: unless-stopped
