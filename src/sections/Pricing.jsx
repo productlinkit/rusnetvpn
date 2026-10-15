@@ -4,7 +4,7 @@ import { Check, Warn } from '../components/icons'
 import { Loader } from '../components/account/parts'
 import { getPlans, startCheckout } from '../features/billing/api'
 import { useResource } from '../features/account/useResource'
-import { label } from '../features/account/labels'
+import { label, money, moneyParts, textOf } from '../features/account/labels'
 import { useSession } from '../state/session'
 
 /* ==========================================================================
@@ -31,23 +31,38 @@ const PAY = [
 
 function toItem(group) {
   const single = group.single
-  const name = label(single.name_key)
+  const name = textOf(single.name, single.name_key)
+  /* The currency is the plan's own, not a guess from the language picker: the
+     server prices each plan in the currency the request's language maps to and
+     stamps it on the payload, falling back to the plan's base currency where
+     no price has been entered yet. Printing a rupiah figure with a dollar sign
+     because the picker says Indonesia is exactly the bug that would cause. */
   return {
     code: single.code,
     tab: name,
     n: `${name} plan`,
-    v: single.price,
-    per: `$${single.price} / ${name}`,
+    amount: single.price,
+    currency: single.currency,
+    per: `${money(single.price, single.currency)} / ${name}`,
     save: single.discount_percent > 0 ? `Save ${single.discount_percent}%` : '',
     cta: `Get ${name} Plan`,
     best: !!single.offer_key,
-    features: single.features,
+    /* the server renders these for the request's language; the keys ride
+       along for the fallback */
+    features: single.features.map((key, i) => ({ key, text: textOf(single.feature_labels?.[i], key) })),
   }
 }
 
 export default function Pricing() {
-  const { openAuth, openAccount, user } = useSession()
+  const { openAuth, openAccount, user, language } = useSession()
+  /* Re-fetched when the language changes: the prices themselves differ, not
+     just their formatting — GET /plans quotes the currency the language maps
+     to (backend domain.Plan.PriceIn). */
   const plans = useResource(getPlans)
+  useEffect(() => {
+    plans.reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
   const items = (plans.data?.groups ?? []).filter((g) => g.single).map(toItem)
 
   const [plan, setPlan] = useState(0)
@@ -104,7 +119,8 @@ export default function Pricing() {
   }
 
   const p = items[plan]
-  const amount = items[shown]?.v
+  const showing = items[shown]
+  const amount = showing ? moneyParts(showing.amount, showing.currency) : null
   const busy = !!p && busyCode === p.code
 
   return (
@@ -135,9 +151,13 @@ export default function Pricing() {
           <div className="price-grid up">
             <div className="pcard">
               <h3>{p.n}</h3>
+              {/* The symbol is its own span because it is styled smaller and
+                  raised; `symbol_first` decides which side it sits on, so a
+                  ruble price reads "899 ₽" rather than "₽899". */}
               <div className={`amt mono${flip ? ' flip' : ''}`}>
-                <span className="cur">$</span>
-                <span className="val">{amount}</span>
+                {amount?.symbolFirst && <span className="cur">{amount.symbol}</span>}
+                <span className="val">{amount?.value}</span>
+                {amount && !amount.symbolFirst && <span className="cur after">{amount.symbol}</span>}
               </div>
               <p className="per">billed once · <b>{p.per}</b></p>
               <span className="save" style={{ display: p.save ? '' : 'none' }}>
@@ -145,8 +165,8 @@ export default function Pricing() {
                 {p.save}
               </span>
               <ul className="feat">
-                {p.features.map((key) => (
-                  <li key={key}><Check />{label(key)}</li>
+                {p.features.map((f) => (
+                  <li key={f.key}><Check />{f.text}</li>
                 ))}
               </ul>
               <Btn

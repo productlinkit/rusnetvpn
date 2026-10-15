@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Arrow, PhotoGlyph } from '../components/icons'
-import { REGIONS } from '../data/content'
+import { Loader } from '../components/account/parts'
+import { getLocations } from '../features/servers/api'
+import { useResource } from '../features/account/useResource'
 import { canHover } from '../hooks'
 
 /* ==========================================================================
@@ -10,9 +12,22 @@ import { canHover } from '../hooks'
    It is driven by one animation frame loop rather than a write per mousemove,
    and the loop is torn down the moment the pointer leaves the list so a page
    sitting idle is not still scheduling frames.
+
+   The rows are the real fleet, from GET /servers/locations — the same list the
+   mobile app's server picker shows and the same one the CMS edits. They used
+   to be six hardcoded regions with invented latencies ("Europe · 32 countries
+   · 240 servers, avg 14 ms"), which meant the coverage section was the one
+   part of the site that could not be wrong, because it was not connected to
+   anything. The headline counts are summed from the same response for the same
+   reason.
    ========================================================================== */
 
 export default function Servers() {
+  const locations = useResource(getLocations)
+  const rows = locations.data ?? []
+  const servers = rows.reduce((n, r) => n + r.server_count, 0)
+  const countries = new Set(rows.map((r) => r.country_code)).size
+
   const peek = useRef(null)
   const img = useRef(null)
   /* pointer target and the eased position chasing it, kept out of state so
@@ -63,7 +78,11 @@ export default function Servers() {
           <div className="sec-head">
             <div className="col up">
               <span className="eyebrow is-neutral">Global Coverage</span>
-              <h2>700+ servers worldwide.</h2>
+              <h2>
+                {servers > 0
+                  ? `${servers.toLocaleString('en-US')} server${servers === 1 ? '' : 's'} across ${countries} ${countries === 1 ? 'country' : 'countries'}.`
+                  : 'Servers worldwide.'}
+              </h2>
             </div>
             <p className="aside up" style={{ '--d': '100ms' }}>
               Spanning North America, South America, Europe, Asia, Africa, and Oceania. Automatic server
@@ -71,26 +90,40 @@ export default function Servers() {
             </p>
           </div>
 
-          <div className="rows up">
-            {REGIONS.map((r) => (
-              <a
-                key={r.name}
-                className="rowi"
-                href="#"
-                /* there is no per-region page yet, so the row is a hover
-                   affordance rather than a link that dumps you at the top */
-                onClick={(e) => e.preventDefault()}
-                onMouseEnter={(e) => enter(e, r.peek)}
-                onMouseMove={move}
-                onMouseLeave={leave}
-              >
-                <span className="nm">{r.name}</span>
-                <span className="tag">{r.tag}</span>
-                <span className="lat mono">avg <b>{r.lat}</b></span>
-                <span className="go"><Arrow /></span>
-              </a>
-            ))}
-          </div>
+          <Loader
+            loading={locations.loading}
+            error={locations.error}
+            reload={locations.reload}
+            empty={rows.length === 0}
+            emptyText="The server list is not available right now."
+          >
+            <div className="rows up">
+              {rows.map((r) => (
+                <a
+                  key={r.id}
+                  className="rowi"
+                  href="#"
+                  /* there is no per-location page yet, so the row is a hover
+                     affordance rather than a link that dumps you at the top */
+                  onClick={(e) => e.preventDefault()}
+                  /* no per-location photography, so the cursor preview stays
+                     off here rather than following an empty frame around */
+                  onMouseEnter={(e) => enter(e, null)}
+                  onMouseMove={move}
+                  onMouseLeave={leave}
+                >
+                  <span className="nm">{r.flag_emoji ? `${r.flag_emoji} ` : ''}{r.country_name}</span>
+                  <span className="tag">
+                    {[r.city, `${r.server_count} server${r.server_count === 1 ? '' : 's'}`, r.has_free ? 'free tier' : null]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                  <span className="lat mono">load <b>{r.best_load}%</b></span>
+                  <span className="go"><Arrow /></span>
+                </a>
+              ))}
+            </div>
+          </Loader>
         </div>
       </section>
 

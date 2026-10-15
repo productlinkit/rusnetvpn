@@ -25,9 +25,13 @@ export const metaSchema = z.object({
   total_pages: z.number(),
 })
 
+/* `msg` is the key; `msg_localized` is the backend's own rendering of it for
+   the Accept-Language this client sent. Optional, because an error that never
+   reached the API (a proxy page) has neither — see resolveFieldMessage. */
 export const fieldErrorSchema = z.object({
   field: z.string(),
   msg: z.string(),
+  msg_localized: z.string().optional(),
 })
 
 export const successEnvelopeSchema = z.object({

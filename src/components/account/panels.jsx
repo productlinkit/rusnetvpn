@@ -4,12 +4,14 @@ import { Download } from '../icons'
 import { Bad, Loader, Ok, Row, Switch } from './parts'
 import * as accountApi from '../../features/account/api'
 import { useResource } from '../../features/account/useResource'
+import { resolveFieldMessage } from '../../shared/api/messages'
 import {
   PLATFORM_ICON,
   STATUS_TAG,
   TXN_TAG,
   date,
   label,
+  textOf,
   money,
 } from '../../features/account/labels'
 
@@ -27,9 +29,25 @@ import {
        assumption would be right until the day it is not.
    ========================================================================== */
 
+/** "Unlimited", "3 hours", "45 minutes" — from the server's own allowance. */
+function dailyLabel(sub) {
+  const mins = sub?.daily_minutes
+  if (mins == null) return '—'
+  if (mins < 0) return 'Unlimited'
+  if (mins % 60 === 0) {
+    const h = mins / 60
+    return `${h} hour${h === 1 ? '' : 's'}`
+  }
+  return `${mins} minutes`
+}
+
 /* ---------- overview ---------- */
-export function Overview({ user, subscription, devices, onClose }) {
-  const notifications = useResource(accountApi.getNotifications)
+export function Overview({ user, subscription, devices, onClose, enabled = true }) {
+  /* Guarded like the fetches in AccountPage: this panel is in the render tree
+     even while the account page is closed, so without it every anonymous
+     visit to the marketing page fired an authenticated request and collected
+     a 401. */
+  const notifications = useResource(accountApi.getNotifications, { enabled })
   const sub = subscription.data
   const dev = devices.data
   const premium = sub?.is_premium
@@ -47,7 +65,7 @@ export function Overview({ user, subscription, devices, onClose }) {
       <div className="ac-grid">
         <div className="ac-stat">
           <div className="k">Current plan</div>
-          <div className="v">{sub ? (sub.plan ? label(sub.plan.name_key) : 'Free') : '—'}</div>
+          <div className="v">{sub ? (sub.plan ? textOf(sub.plan.name, sub.plan.name_key) : 'Free') : '—'}</div>
           <div className="n">
             {sub?.plan ? 'Premium, every feature included' : 'Upgrade for the full service'}
           </div>
@@ -73,8 +91,12 @@ export function Overview({ user, subscription, devices, onClose }) {
           </div>
         </div>
         <div className="ac-stat">
-          <div className="k">Data</div>
-          <div className="v">{premium ? 'Unlimited' : '1 GB / day'}</div>
+          {/* The product meters VPN *time*, not data — the free tier gets
+              FREE_SESSION_MINUTES_PER_DAY minutes (BR-01/BR-02), which is a
+              deployment setting the server now answers with. This tile used to
+              read "1 GB / day", a limit that has never existed. */}
+          <div className="k">Daily VPN time</div>
+          <div className="v">{dailyLabel(sub)}</div>
           <div className="n">{premium ? 'No cap on any paid plan' : 'Unlimited on any paid plan'}</div>
         </div>
       </div>
@@ -141,10 +163,9 @@ export function Subscription({ subscription, onClose }) {
   }
 
   const confirmCancel = async () => {
-    if (!reasonId) {
-      setError('Please choose a reason first.')
-      return
-    }
+    /* `reason_id` is `required,uuid` on billing.CancelRequest, so "pick a
+       reason" is the server's sentence to write, not ours — it already ships
+       it as error.validation.reasonIdRequired in every language it supports. */
     setBusy(true)
     setError(null)
     try {
@@ -153,7 +174,10 @@ export function Subscription({ subscription, onClose }) {
       setOk('Cancelled. Your plan stays on until it expires.')
       await subscription.reload()
     } catch (e) {
-      setError(e)
+      /* The strip takes a string as readily as an error, so when the server
+         names the one input this panel has, show that rather than the generic
+         "check the highlighted fields" — nothing here is highlighted. */
+      setError(e?.fieldErrors?.reason_id || e)
     } finally {
       setBusy(false)
     }
@@ -187,7 +211,7 @@ export function Subscription({ subscription, onClose }) {
             <div className="ac-card dark">
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
                 <div>
-                  <h3>{sub.plan ? `${label(sub.plan.name_key)} plan` : 'Free plan'}</h3>
+                  <h3>{sub.plan ? `${textOf(sub.plan.name, sub.plan.name_key)} plan` : 'Free plan'}</h3>
                   <p className="sub" style={{ marginTop: 6 }}>
                     {sub.plan
                       ? `${money(sub.plan.price, sub.plan.currency)} · ${sub.plan.max_devices} device${sub.plan.max_devices > 1 ? 's' : ''} · ${sub.plan.duration_days} days`
@@ -248,13 +272,14 @@ export function Subscription({ subscription, onClose }) {
                   : 'Upgrade to unlock the full service.'}
               </p>
               <div className="ac-grid" style={{ marginTop: 18, gap: 10 }}>
-                {(sub.benefits.length ? sub.benefits : sub.plan?.features ?? []).map((key) => (
+                {(sub.benefits.length ? sub.benefits : sub.plan?.features ?? []).map((key, i) => (
                   <span
                     key={key}
                     className="ac-tag good"
                     style={{ textTransform: 'none', letterSpacing: 0, fontSize: 13, fontWeight: 600 }}
                   >
-                    {label(key)}
+                    {/* index-aligned with the keys — see PlanPayload.FeatureLabels */}
+                    {textOf(sub.plan?.feature_labels?.[i], key)}
                   </span>
                 ))}
               </div>
@@ -277,7 +302,7 @@ export function Subscription({ subscription, onClose }) {
                         <select value={reasonId} onChange={(e) => setReasonId(e.target.value)}>
                           <option value="">Choose a reason…</option>
                           {reasons.data?.map((r) => (
-                            <option key={r.id} value={r.id}>{label(r.reason_key)}</option>
+                            <option key={r.id} value={r.id}>{textOf(r.reason, r.reason_key)}</option>
                           ))}
                         </select>
                       </Loader>
@@ -346,7 +371,7 @@ export function CheckoutSuccess({ subscription, onDone }) {
         <div className="ac-card dark">
           {active ? (
             <>
-              <h3>{sub.plan ? `${label(sub.plan.name_key)} plan` : 'Premium'}</h3>
+              <h3>{sub.plan ? `${textOf(sub.plan.name, sub.plan.name_key)} plan` : 'Premium'}</h3>
               <p className="sub" style={{ marginTop: 6, maxWidth: '52ch' }}>
                 {sub.plan
                   ? `${money(sub.plan.price, sub.plan.currency)} · ${sub.auto_renew ? `renews ${date(sub.expires_at)}` : `runs until ${date(sub.expires_at)}`}`
@@ -445,7 +470,7 @@ export function Billing({ user }) {
                     return (
                       <tr key={t.id}>
                         <td className="mono">{date(t.date)}</td>
-                        <td>{label(t.plan_name_key)}</td>
+                        <td>{textOf(t.plan_name, t.plan_name_key)}</td>
                         <td className="amt">{money(t.amount, t.currency)}</td>
                         <td><span className={`ac-tag ${tag.tone}`}>{tag.text}</span></td>
                         <td style={{ textAlign: 'right' }}>
@@ -593,8 +618,17 @@ export function Security({ onDevicesChanged }) {
   const [busy, setBusy] = useState(false)
   const inputs = { cur: useRef(null), pw: useRef(null), again: useRef(null) }
 
-  /* the same BR-09 rule the auth page and the server both apply */
-  const strong = (v) => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v)
+  /* Wire name -> the input it belongs to. The server validates `old_password`
+     and `new_password` (user.ChangePasswordRequest); this form calls them cur
+     and pw. */
+  const FIELD_MAP = { old_password: 'cur', new_password: 'pw' }
+
+  const focusFirst = (bad) => {
+    /* the class that marks a bad field lands on the next render, so pick the
+       field to focus from the errors themselves */
+    const k = ['cur', 'pw', 'again'].find((n) => bad[n])
+    if (k) inputs[k].current?.focus()
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -602,19 +636,20 @@ export function Security({ onDevicesChanged }) {
     setOk(false)
     setError(null)
 
+    /* Only what the server cannot answer for us. The presence checks and the
+       BR-09 strength rule used to live here as well, duplicating
+       `validate:"required,password"` — and a duplicate rule is one that can
+       disagree with the real one. What is left has no server counterpart:
+       `again` is never sent (the request carries old_password and new_password
+       and nothing else), and "pick a different password" is not a rule the API
+       enforces. */
     const next = {}
-    if (!cur) next.cur = 'Please enter your current password'
-    if (!pw) next.pw = 'Please enter a new password'
-    else if (!strong(pw)) next.pw = 'Password must be at least 8 characters and include a letter and a number.'
-    else if (pw === cur) next.pw = 'Pick something different from your current password'
-    if (!again) next.again = 'Please confirm your new password'
-    else if (again !== pw) next.again = 'Passwords do not match'
+    if (again !== pw) next.again = resolveFieldMessage('error.validation.confirmMismatch')
+    else if (pw && pw === cur) next.pw = resolveFieldMessage('error.validation.samePassword')
 
     setErr(next)
     if (Object.keys(next).length) {
-      /* the class that marks a bad field lands on the next render, so pick the
-         field to focus from the errors themselves */
-      inputs[['cur', 'pw', 'again'].find((k) => next[k])].current?.focus()
+      focusFirst(next)
       return
     }
 
@@ -629,10 +664,23 @@ export function Security({ onDevicesChanged }) {
          underneath us */
       onDevicesChanged?.()
     } catch (e) {
-      // AUTH-level rejections name the field they are about
-      if (e?.code === 'AUTH_002' || e?.i18nKey === 'error.auth.passwordMismatch') {
-        setErr({ cur: 'That is not your current password' })
-        inputs.cur.current?.focus()
+      const mapped = {}
+      for (const [wire, text] of Object.entries(e?.fieldErrors ?? {})) {
+        const target = FIELD_MAP[wire]
+        if (target) mapped[target] = text
+      }
+
+      /* A wrong current password is an auth rejection, not a validation one —
+         the server answers AUTH_002 with no `error[]`, because nothing about
+         the request was malformed. It is still about one input, so it is shown
+         there, in the server's own words rather than ours. */
+      if (!Object.keys(mapped).length && (e?.code === 'AUTH_002' || e?.i18nKey === 'error.auth.passwordMismatch')) {
+        mapped.cur = e.text
+      }
+
+      if (Object.keys(mapped).length) {
+        setErr(mapped)
+        focusFirst(mapped)
       } else {
         setError(e)
       }
@@ -782,11 +830,10 @@ export function Support({ onChat, onClose, onDeleted }) {
   }, [asking])
 
   const remove = async () => {
-    if (!password) {
-      setErr('Please enter your password to confirm')
-      field.current?.focus()
-      return
-    }
+    /* No local "please type something" gate: DeleteAccountRequest marks
+       `password` required, so an empty box comes back named, with the server's
+       own wording. A wrong one is AUTH_002 and carries no `error[]` — it is
+       still about this input, so it is shown here. */
     setBusy(true)
     setErr(null)
     setError(null)
@@ -794,8 +841,13 @@ export function Support({ onChat, onClose, onDeleted }) {
       await accountApi.deleteAccount(password)
       onDeleted()
     } catch (e) {
-      if (e?.code === 'AUTH_002') setErr('That password is not right')
-      else setError(e)
+      const named = e?.fieldErrors?.password
+      if (named || e?.code === 'AUTH_002') {
+        setErr(named || e.text)
+        field.current?.focus()
+      } else {
+        setError(e)
+      }
     } finally {
       setBusy(false)
     }

@@ -103,18 +103,6 @@ export const TILES = [
   },
 ]
 
-/* ---------- servers: the region rows ----------
-   `peek` is the photo that follows the cursor. Oceania has none yet, and a
-   missing key means no preview rather than a broken request. */
-export const REGIONS = [
-  { name: 'Europe', tag: '32 countries · 240 servers', lat: '14 ms', peek: '/images/region-europe.jpg' },
-  { name: 'North America', tag: '5 countries · 150 servers', lat: '42 ms', peek: '/images/region-namerica.jpg' },
-  { name: 'Asia', tag: '21 countries · 140 servers', lat: '48 ms', peek: '/images/region-apac.jpg' },
-  { name: 'South America', tag: '12 countries · 80 servers', lat: '66 ms', peek: '/images/region-latam.jpg' },
-  { name: 'Africa', tag: '14 countries · 55 servers', lat: '58 ms', peek: '/images/region-mea.jpg' },
-  { name: 'Oceania', tag: '6 countries · 35 servers', lat: '71 ms' },
-]
-
 /* ---------- apps: phone screenshots ---------- */
 export const SHOT = {
   connected: '/images/shots/connected.jpg',
@@ -192,40 +180,6 @@ export const PROS_CONS = [
   },
 ]
 
-/* ---------- faq ---------- */
-export const FAQ = [
-  {
-    cat: 'Privacy',
-    q: 'Do you keep any logs?',
-    a: 'RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever. We are a no-log VPN meaning that we don’t store any of your traffic logs.',
-  },
-  {
-    cat: 'Global Coverage',
-    q: 'Where are your servers?',
-    a: '700+ servers worldwide, spanning North America, South America, Europe, Asia, Africa, and Oceania. With thousands of servers in 90+ countries, you can easily access all of your favorite content – shows, music, apps, and more – regardless of where you live.',
-  },
-  {
-    cat: 'Ownership',
-    q: 'Who owns and runs RusVPN?',
-    a: 'RusVPN is run and owned by local people that care about internet privacy and security in Russia. No shadowy megacorporation abroad involvement. Owned and operated in-house, following strict Russian security standards.',
-  },
-  {
-    cat: 'Performance',
-    q: 'Will RusVPN slow my connection down?',
-    a: 'Advanced hardware ensures fast speeds and smooth streaming. Automatic server switching prevents slowdowns for uninterrupted service, and we offer the most advanced VPN protocols for the fastest and most secure connection.',
-  },
-  {
-    cat: 'Streaming',
-    q: 'Does it work with streaming services?',
-    a: 'We have optimized streaming servers around the globe, allowing you to get the most from your existing streaming subscription. Zero restrictions, unlimited content, regardless of where you live.',
-  },
-  {
-    cat: 'Subscription',
-    q: 'Can I cancel auto-renewal?',
-    a: 'Yes. Turn off auto-renewal from My Account and you will keep access until the end of the paid period, and your card will not be charged again. Every invoice sits under transaction history, alongside manage payment & invoices.',
-  },
-]
-
 /* ---------- nav ---------- */
 export const NAV_LINKS = [
   { href: '#why', label: 'Benefits' },
@@ -234,20 +188,6 @@ export const NAV_LINKS = [
   { href: '#apps', label: 'Download App' },
   { href: '#pricing', label: 'Pricing' },
   { href: '#faq', label: 'FAQ' },
-]
-
-/* ---------- account: seed data for the prototype ---------- */
-export const INVOICES = [
-  { date: '6 Aug 2026', desc: '1-Year plan', amt: '$47.99', state: 'good', label: 'Paid' },
-  { date: '6 Aug 2025', desc: '1-Year plan', amt: '$47.99', state: 'good', label: 'Paid' },
-  { date: '6 Jul 2025', desc: '1-Month plan', amt: '$9.99', state: 'good', label: 'Paid' },
-  { date: '3 Jul 2025', desc: '3-day trial', amt: '$0.00', state: 'warn', label: 'Free' },
-]
-
-export const DEVICES = [
-  { id: 'win', icon: 'desktop', name: 'Windows 11 · This device', meta: 'Active now · Jakarta, Indonesia', current: true },
-  { id: 'iphone', icon: 'phone', name: 'iPhone 15', meta: 'Last active 2 hours ago · Jakarta, Indonesia' },
-  { id: 'mac', icon: 'laptop', name: 'MacBook Air', meta: 'Last active 3 days ago · Bandung, Indonesia' },
 ]
 
 export const RENEW_ON = '6 Aug 2027'

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useBodyClass, useScrollLock } from '../hooks'
 import { registerApiHandlers } from '../shared/api/gates'
+import { getLocales } from '../shared/api/locales'
+import { setCurrencyCatalogue } from '../features/account/labels'
 import { startCheckout } from '../features/billing/api'
 import { tokenStore, userCache } from '../shared/api/tokens'
 
@@ -213,6 +215,27 @@ export function SessionProvider({ children }) {
     },
     [],
   )
+
+  /* ---------- the currency catalogue ----------
+     How to print an amount — symbol, side, decimals — comes from the server
+     (GET /locales), not from a table in this bundle. Fetched once: the
+     catalogue is the same whatever language is picked, because the server
+     stamps the applicable currency on every amount it sends.
+
+     A failure is swallowed on purpose. money() falls back to a small built-in
+     table, so an unreachable settings endpoint costs a currency added last
+     week its symbol — it does not blank out the price. */
+  useEffect(() => {
+    let alive = true
+    getLocales()
+      .then((cat) => {
+        if (alive) setCurrencyCatalogue(cat.currencies)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   /* ---------- the global gates ----------
      Registered once, at mount, because the interceptor can fire them from any

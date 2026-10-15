@@ -134,7 +134,7 @@ export default function AccountPage({ onChat }) {
         )
       default:
         return (
-          <Overview user={who} subscription={subscription} devices={devices} onClose={closeAndGo} />
+          <Overview user={who} subscription={subscription} devices={devices} onClose={closeAndGo} enabled={open} />
         )
     }
   }

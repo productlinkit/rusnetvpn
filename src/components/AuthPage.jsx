@@ -75,16 +75,13 @@ const COPY = {
   },
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-
-/**
- * BR-09, the same rule `validatorx.New` registers on the server: at least
- * eight characters, one letter and one digit. Checked here so the common
- * mistake is caught without a round trip — the server still checks it, and its
- * answer wins if the two ever disagree.
- */
-const PASSWORD_OK = (v) => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v)
-const PASSWORD_HINT = 'Password must be at least 8 characters and include a letter and a number.'
+/* The email pattern and the BR-09 password rule used to be re-implemented here
+   and checked before submitting. They are gone: the server enforces both
+   (`validate:"required,email"` and the `password` rule `validatorx.New`
+   registers), and its answer now renders against the input, so a second copy
+   here could only ever disagree with it.
+   The password rule is still *stated* to the visitor — it is the placeholder on
+   the register and new-password views — which is guidance, not a gate. */
 
 /** Wire field name -> the input that shows the message. */
 const FIELD_MAP = { name: 'name', email: 'email', password: 'pass', code: 'code' }
@@ -206,15 +203,15 @@ export default function AuthPage() {
 
   /** Hand a rejected submission to the fields the server named, or to the strip. */
   const handle = (error) => {
+    /* `fieldErrors` already holds sentences, in the visitor's language:
+       shared/api/errors.js resolves each entry against the server's own
+       `msg_localized` and only falls back to the local table when the server
+       did not send one. All that is left here is deciding which input on
+       *this* form the wire name belongs to. */
     const mapped = {}
-    for (const [wire, key] of Object.entries(error?.fieldErrors ?? {})) {
+    for (const [wire, text] of Object.entries(error?.fieldErrors ?? {})) {
       const target = FIELD_MAP[wire]
-      /* `error[].msg` is a translation key. A key we cannot resolve is worse
-         than no field message at all — it would print
-         "error.validation.nameTooShort" into the form — so an unresolved one
-         is dropped and the envelope's own sentence carries the failure. */
-      const text = resolveFieldMessage(key)
-      if (target && text) mapped[target] = text
+      if (target) mapped[target] = text
     }
     setErr(mapped)
     /* VALIDATION_001 already speaks through the fields; repeating "check the
@@ -225,26 +222,34 @@ export default function AuthPage() {
     if (first) inputs[first].current?.focus()
   }
 
-  /* ---------- submit ---------- */
+  /* ---------- submit ----------
+
+     What is left of local validation, and why each piece survived.
+
+     Everything the server can rule on is now sent to the server and rendered
+     from its answer: the name minimum, the email format, the password policy,
+     the code length. They were duplicated here, and a duplicate rule is a rule
+     that can disagree — a rejected field would go red with our wording while
+     the server's own sentence said something else in the toast above it.
+
+     Two checks stay, because for them there is no server answer to wait for:
+
+       · `confirm` — no request carries it. RegisterRequest and
+         ResetPasswordRequest have `password` and nothing else, so "the two
+         boxes differ" is a question only this form can ask.
+       · the code on the *forgot-password* path — that screen deliberately does
+         not call /auth/otp/verify (see the note in submit: verifying consumes
+         the code and breaks the reset), so no request is made and no answer
+         comes back. On the register path the code does go to the server, and
+         the server's answer is what shows. */
   const validate = () => {
-    const f = d.fields
     const next = {}
-    if (f.name && name.trim().length < 2) next.name = 'Please enter your name'
-    if (f.email) {
-      if (!email.trim()) next.email = 'Please enter your email address'
-      else if (!EMAIL_RE.test(email.trim())) next.email = 'Please enter a valid email address'
+    if (d.fields.confirm && confirm !== pass) {
+      next.confirm = resolveFieldMessage('error.validation.confirmMismatch')
     }
-    if (f.pass) {
-      if (!pass) next.pass = 'Please enter your password'
-      // Sign-in only checks that something was typed: the rule applies to
-      // passwords being *set*, and an older account may predate it.
-      else if (view !== 'in' && !PASSWORD_OK(pass)) next.pass = PASSWORD_HINT
+    if (d.fields.code && purpose !== 'register' && !/^\d{6}$/.test(code.trim())) {
+      next.code = resolveFieldMessage('error.validation.otpLength')
     }
-    if (f.confirm) {
-      if (!confirm) next.confirm = 'Please confirm your password'
-      else if (confirm !== pass) next.confirm = 'Passwords do not match'
-    }
-    if (f.code && !/^\d{6}$/.test(code.trim())) next.code = 'Enter the six-digit code'
     return next
   }
 

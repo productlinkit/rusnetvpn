@@ -15,6 +15,10 @@ export const planSchema = z.object({
   id: z.string(),
   code: z.string(),
   name_key: z.string(),
+  /* The server renders the key for the request's language. Optional and
+     defaulted: an older backend sends only the key, and `textOf` falls back to
+     the local table for exactly that case. */
+  name: z.string().default(''),
   group_code: z.string(),
   device_variant: z.string(),
   duration_days: z.number(),
@@ -24,6 +28,8 @@ export const planSchema = z.object({
   offer_key: z.string().nullable(),
   max_devices: z.number(),
   features: z.array(z.string()).default([]),
+  /* index-aligned with `features` */
+  feature_labels: z.array(z.string()).default([]),
 })
 
 const planGroupSchema = z.object({

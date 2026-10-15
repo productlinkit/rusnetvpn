@@ -1,4 +1,6 @@
 import { errorEnvelopeSchema, suspendedDataSchema } from './envelope'
+import { gates } from './gates'
+import { fieldMessage } from './messages'
 
 /* ==========================================================================
    ERRORS
@@ -32,21 +34,52 @@ export const CODES = [
  * which happens when the request never reached it at all. It is deliberately
  * short: the server's own catalogue is the source of truth for wording, and
  * duplicating it here would guarantee the two drift.
+ *
+ * Keyed by language, then by error code. NETWORK / TIMEOUT / UNKNOWN are the
+ * three the client raises itself, and they are precisely the ones the server
+ * can never translate for us — so if this table were English-only, the visitor
+ * who picked Indonesian would be shown English exactly when things break.
  */
 const FALLBACK = {
-  VALIDATION_001: 'Please check the highlighted fields.',
-  AUTH_001: 'Your session has expired. Please sign in again.',
-  AUTH_002: 'Incorrect email or password.',
-  AUTH_003: 'The verification code is invalid or has expired.',
-  AUTH_004: 'Your session is no longer valid. Please sign in again.',
-  AUTH_005: 'Please verify your email first.',
-  ACC_001: 'Your account has been suspended. Please contact support.',
-  DEV_001: 'You have reached the device limit for your plan.',
-  RATE_001: 'Too many attempts. Please wait a moment and try again.',
-  APP_001: 'This version is no longer supported.',
-  NETWORK: 'No connection. Check your network and try again.',
-  TIMEOUT: 'The request timed out. Please try again.',
-  UNKNOWN: 'Something went wrong. Please try again.',
+  en: {
+    VALIDATION_001: 'Please check the highlighted fields.',
+    AUTH_001: 'Your session has expired. Please sign in again.',
+    AUTH_002: 'Incorrect email or password.',
+    AUTH_003: 'The verification code is invalid or has expired.',
+    AUTH_004: 'Your session is no longer valid. Please sign in again.',
+    AUTH_005: 'Please verify your email first.',
+    ACC_001: 'Your account has been suspended. Please contact support.',
+    DEV_001: 'You have reached the device limit for your plan.',
+    RATE_001: 'Too many attempts. Please wait a moment and try again.',
+    APP_001: 'This version is no longer supported.',
+    NETWORK: 'No connection. Check your network and try again.',
+    TIMEOUT: 'The request timed out. Please try again.',
+    UNKNOWN: 'Something went wrong. Please try again.',
+  },
+  id: {
+    VALIDATION_001: 'Silakan periksa kembali kolom yang ditandai.',
+    AUTH_001: 'Sesi Anda telah berakhir. Silakan masuk kembali.',
+    AUTH_002: 'Email atau kata sandi salah.',
+    AUTH_003: 'Kode verifikasi tidak valid atau telah kedaluwarsa.',
+    AUTH_004: 'Sesi Anda sudah tidak valid. Silakan masuk kembali.',
+    AUTH_005: 'Silakan verifikasi email Anda terlebih dahulu.',
+    ACC_001: 'Akun Anda telah ditangguhkan. Silakan hubungi dukungan.',
+    DEV_001: 'Anda telah mencapai batas perangkat untuk paket Anda.',
+    RATE_001: 'Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.',
+    APP_001: 'Versi ini sudah tidak didukung.',
+    NETWORK: 'Tidak ada koneksi. Periksa jaringan Anda lalu coba lagi.',
+    TIMEOUT: 'Permintaan melebihi batas waktu. Silakan coba lagi.',
+    UNKNOWN: 'Terjadi kesalahan. Silakan coba lagi.',
+  },
+}
+
+const DEFAULT_LANG = 'en'
+
+/** Pick `code` out of the fallback table, in the visitor's language. */
+function fallbackText(code) {
+  const lang = gates.currentLanguage()
+  const table = FALLBACK[lang] || FALLBACK[DEFAULT_LANG]
+  return table[code] || FALLBACK[DEFAULT_LANG][code] || FALLBACK[DEFAULT_LANG].UNKNOWN
 }
 
 export class ApiError extends Error {
@@ -57,7 +90,7 @@ export class ApiError extends Error {
     /** The server's translation key, e.g. `error.auth.invalidCredentials`. */
     this.i18nKey = options.i18nKey
     this.status = options.status
-    /** field name -> message, from the envelope's `error[]`. */
+    /** field name -> the sentence to print under it, from the envelope's `error[]`. */
     this.fieldErrors = options.fieldErrors
     /** The server's own rendering of `msg`, honouring Accept-Language. */
     this.localizedMessage = options.localizedMessage
@@ -66,7 +99,12 @@ export class ApiError extends Error {
 
   /** What to actually show a person. */
   get text() {
-    return this.localizedMessage || FALLBACK[this.code] || FALLBACK.UNKNOWN
+    return this.localizedMessage || fallbackText(this.code)
+  }
+
+  /** True when the server named specific inputs rather than failing wholesale. */
+  get hasFieldErrors() {
+    return !!this.fieldErrors && Object.keys(this.fieldErrors).length > 0
   }
 
   /** True when the user should be sent to the code screen, not shown a toast. */
@@ -81,16 +119,28 @@ export class ApiError extends Error {
   }
 }
 
-/** Collapse the envelope's `error[]` into field -> message. */
+/**
+ * Collapse the envelope's `error[]` into field -> the sentence to render.
+ *
+ * Resolving happens here rather than at the form, so every screen that shows
+ * field errors gets the same answer — the server's own wording where it sent
+ * one, the local table only where it did not.
+ *
+ * An entry that resolves to nothing at all is dropped: printing
+ * "error.validation.nameTooShort" at a visitor is worse than saying nothing
+ * against that input and letting the envelope's own sentence carry the failure.
+ */
 function toFieldErrors(errors) {
   if (!errors?.length) return undefined
   const out = {}
   for (const e of errors) {
     // First message wins: the UI has one slot per input, and the server orders
     // them by declaration, so the first is the most specific failure.
-    if (out[e.field] === undefined) out[e.field] = e.msg
+    if (out[e.field] !== undefined) continue
+    const text = fieldMessage(e)
+    if (text) out[e.field] = text
   }
-  return out
+  return Object.keys(out).length ? out : undefined
 }
 
 /**

@@ -29,6 +29,8 @@
 .pcard{background:var(--card);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);border:1px solid var(--line-2);display:flex;flex-direction:column;}
 .pcard .amt{display:flex;align-items:flex-start;gap:6px;margin-top:26px;}
 .pcard .amt .cur{font-size:26px;font-weight:600;margin-top:10px;color:var(--body);}
+/* A trailing symbol sits on the baseline, not raised: "899 ₽", not "899₽". */
+.pcard .amt .cur.after{margin-top:0;align-self:flex-end;margin-bottom:14px;margin-left:6px;}
 .pcard .amt .val{font-size:clamp(52px,7vw,86px);font-weight:700;letter-spacing:-.05em;line-height:.92;transition:opacity .3s,transform .35s var(--ease);}
 .pcard .amt.flip .val{opacity:0;transform:translateY(-8px);}
 .pcard .per{font-size:14.5px;color:var(--body);margin-top:14px;}

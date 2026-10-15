@@ -24,6 +24,9 @@ const subscriptionSchema = z.object({
   days_remaining: z.number(),
   max_devices: z.number(),
   is_premium: z.boolean(),
+  /* VPN minutes per day, or -1 for no cap. The page used to claim
+     "1 GB / day", a limit this product has never had. */
+  daily_minutes: z.number().default(0),
   benefits: z.array(z.string()).default([]),
 })
 
@@ -32,6 +35,7 @@ const transactionSchema = z.object({
   order_no: z.string(),
   date: z.string(),
   plan_name_key: z.string(),
+  plan_name: z.string().default(''),
   amount: z.string(),
   currency: z.string(),
   status: z.string(),
@@ -78,6 +82,7 @@ const notificationSchema = z.object({
 const cancelReasonSchema = z.object({
   id: z.string(),
   reason_key: z.string(),
+  reason: z.string().default(''),
   sort_order: z.number(),
 })
 

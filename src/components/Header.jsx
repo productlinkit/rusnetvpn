@@ -5,6 +5,7 @@ import { Chevron, Globe, Tick } from './icons'
 import { NAV_LINKS } from '../data/content'
 import { useDismiss, useMedia, useScrollProgress } from '../hooks'
 import { useSession } from '../state/session'
+import { getLocales } from '../shared/api/locales'
 
 /* ==========================================================================
    HEADER
@@ -14,17 +15,30 @@ import { useSession } from '../state/session'
    over photos and the navy band. It has no edge, so it never reads as a box.
    ========================================================================== */
 
-const LANGS = [
-  { code: 'en', name: 'English', ab: 'EN' },
-  { code: 'id', name: 'Indonesia', ab: 'ID' },
-]
+/* What to offer before the catalogue arrives, and if it never does. The real
+   list is GET /locales — a language added in the CMS has to appear here
+   without a redeploy, which a constant cannot do. */
+const FALLBACK_LANGS = [{ code: 'en', name: 'English', native_name: 'English' }]
 
 /* A dropdown, not a row of chips: two languages today, room for more later
    without the bar getting any wider. */
 function LangPicker() {
   const [open, setOpen] = useState(false)
   const { language: lang, setLanguage: setLang } = useSession()
+  const [langs, setLangs] = useState(FALLBACK_LANGS)
   const ref = useRef(null)
+
+  useEffect(() => {
+    let alive = true
+    getLocales()
+      .then((cat) => {
+        if (alive && cat.languages.length) setLangs(cat.languages)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   useDismiss(open, useCallback(() => setOpen(false), []), ref)
 
@@ -51,7 +65,7 @@ function LangPicker() {
         <Chevron className="chev" />
       </button>
       <div className="lang-menu" role="listbox">
-        {LANGS.map((l) => (
+        {langs.map((l) => (
           <button
             key={l.code}
             type="button"
@@ -63,8 +77,10 @@ function LangPicker() {
               setOpen(false)
             }}
           >
-            {l.name}
-            <span className="ab">{l.ab}</span>
+            {/* The language's own name, so somebody looking for theirs can
+                find it without reading English. */}
+            {l.native_name || l.name}
+            <span className="ab">{l.code.toUpperCase()}</span>
             <Tick className="tickmark" />
           </button>
         ))}

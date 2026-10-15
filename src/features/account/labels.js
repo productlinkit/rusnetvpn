@@ -55,6 +55,22 @@ export function label(key) {
   return KNOWN[key] ?? humanize(key)
 }
 
+/**
+ * The text to show for something the server sends as a key *and* as rendered
+ * copy — plan names, plan features, cancel reasons.
+ *
+ * The server's rendering wins. It knows the request's language, and its
+ * catalogue is the one the CMS and the mobile app already agree on; the table
+ * above is English-only and was missing entries outright (the `unlimited` plan
+ * had none, so the account page printed the word "Name" at anyone who had it).
+ *
+ * The table stays as the fallback, for a key the backend has no translation
+ * for yet — the same reason the fallback exists at all.
+ */
+export function textOf(rendered, key) {
+  return rendered || label(key)
+}
+
 /* ---------- plain formatting ---------- */
 
 const DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -67,14 +83,62 @@ export function date(iso) {
 }
 
 /**
- * Money is a decimal string on the wire and stays one here. Only the symbol is
- * added — parsing "47.99" to a float to print it back is how it becomes
- * 47.989999999999995.
+ * Money is a decimal string on the wire and stays one here. Only the symbol and
+ * the grouping are added — parsing "47.99" to a float to print it back is how
+ * it becomes 47.989999999999995.
+ *
+ * How a currency is written comes from the server's catalogue (GET /locales):
+ * the symbol, which side of the number it sits on, and how many decimals to
+ * show. Rupiah is Rp 149.000 and a ruble is 899 ₽, and neither is derivable
+ * from the amount alone.
+ *
+ * FALLBACK is what to use before the catalogue has arrived, or if it never
+ * does. It is deliberately small: the server's list is authoritative, and a
+ * full second copy here would drift the moment a currency is added in the CMS.
  */
-const SYMBOL = { USD: '$', EUR: '€', RUB: '₽', IDR: 'Rp' }
+const FALLBACK = {
+  USD: { symbol: '$', decimals: 2, symbol_first: true },
+  EUR: { symbol: '€', decimals: 2, symbol_first: true },
+  RUB: { symbol: '₽', decimals: 2, symbol_first: false },
+  IDR: { symbol: 'Rp', decimals: 0, symbol_first: true },
+}
+
+let catalogue = {}
+
+/** Called once the catalogue is fetched. See state/session.jsx. */
+export function setCurrencyCatalogue(currencies) {
+  const next = {}
+  for (const c of currencies ?? []) next[c.code] = c
+  catalogue = next
+}
+
+/** Group the integer part and trim or pad the fraction to `decimals`. */
+function render(amount, decimals) {
+  const [wholeRaw, fracRaw = ''] = String(amount).split('.')
+  const negative = wholeRaw.startsWith('-')
+  const whole = (negative ? wholeRaw.slice(1) : wholeRaw).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const sign = negative ? '-' : ''
+  if (!decimals) return sign + whole
+  return `${sign}${whole}.${fracRaw.padEnd(decimals, '0').slice(0, decimals)}`
+}
+
+/**
+ * The pieces, for the pricing card — which styles the symbol and the digits
+ * separately, so it cannot use a single formatted string.
+ */
+export function moneyParts(amount, currency = 'USD') {
+  const spec = catalogue[currency] ?? FALLBACK[currency]
+  if (!spec) return { symbol: currency, value: String(amount), symbolFirst: true }
+  return {
+    symbol: spec.symbol,
+    value: render(amount, spec.decimals),
+    symbolFirst: spec.symbol_first,
+  }
+}
 
 export function money(amount, currency = 'USD') {
-  return (SYMBOL[currency] ?? currency + ' ') + amount
+  const { symbol, value, symbolFirst } = moneyParts(amount, currency)
+  return symbolFirst ? `${symbol}${value}` : `${value} ${symbol}`
 }
 
 /** The subscription status as the badge should read it. */

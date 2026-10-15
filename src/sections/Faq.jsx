@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Arrow, ChevronRight } from '../components/icons'
-import { FAQ } from '../data/content'
+import { Loader } from '../components/account/parts'
+import { getFaqs } from '../features/content/api'
+import { useResource } from '../features/account/useResource'
 import { REDUCED_MOTION } from '../hooks'
+import { useSession } from '../state/session'
 
 /* ==========================================================================
    FAQ — split master / detail
@@ -9,17 +12,38 @@ import { REDUCED_MOTION } from '../hooks'
    One list, two readings of it. Above 880 the questions are a nav and the
    answer lives in the panel beside them; below that the panel is hidden and
    each question opens inline instead.
+
+   The questions come from GET /content/faqs, which is what the CMS edits — so
+   support can answer a recurring question by adding it here rather than by
+   asking for a deploy. The server returns them already in the request's
+   language, hence the refetch when the picker changes.
    ========================================================================== */
 
 const pad = (n) => String(n).padStart(2, '0')
 
 export default function Faq() {
+  const { language } = useSession()
+  const faqs = useResource(getFaqs)
+  useEffect(() => {
+    faqs.reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
+
+  const items_ = faqs.data ?? []
   const [active, setActive] = useState(0)
   /* what the panel is currently showing — it trails `active` through the
      fade so the text never changes while it is still visible */
   const [shown, setShown] = useState(0)
   const [swap, setSwap] = useState(false)
   const items = useRef([])
+
+  /* The list length changes when the language does; an index left pointing
+     past the end would render a blank panel. */
+  useEffect(() => {
+    if (active < items_.length) return
+    setActive(0)
+    setShown(0)
+  }, [items_.length, active])
 
   useEffect(() => {
     if (active === shown) return
@@ -38,12 +62,13 @@ export default function Faq() {
   const onKeyDown = (e) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
     e.preventDefault()
-    const next = (active + (e.key === 'ArrowDown' ? 1 : -1) + FAQ.length) % FAQ.length
+    if (!items_.length) return
+    const next = (active + (e.key === 'ArrowDown' ? 1 : -1) + items_.length) % items_.length
     setActive(next)
     items.current[next]?.focus()
   }
 
-  const q = FAQ[shown]
+  const q = items_[shown]
 
   return (
     <section className="sec wrap" id="faq" style={{ paddingTop: 0 }}>
@@ -57,10 +82,17 @@ export default function Faq() {
         </p>
       </div>
 
+      <Loader
+        loading={faqs.loading}
+        error={faqs.error}
+        reload={faqs.reload}
+        empty={items_.length === 0}
+        emptyText="No questions have been published yet."
+      >
       <div className="qsplit up" onKeyDown={onKeyDown}>
         <div className="qnav">
-          {FAQ.map((item, i) => (
-            <div className={`qrow${i === active ? ' is-on' : ''}`} key={item.q}>
+          {items_.map((item, i) => (
+            <div className={`qrow${i === active ? ' is-on' : ''}`} key={item.id}>
               <button
                 className="qitem"
                 aria-expanded={i === active}
@@ -68,10 +100,10 @@ export default function Faq() {
                 onClick={() => setActive(i)}
               >
                 <span className="qn mono">{pad(i + 1)}</span>
-                <span className="qt">{item.q}</span>
+                <span className="qt">{item.question}</span>
                 <span className="qc"><ChevronRight /></span>
               </button>
-              <div className="qinline"><div><p>{item.a}</p></div></div>
+              <div className="qinline"><div><p>{item.answer}</p></div></div>
             </div>
           ))}
         </div>
@@ -79,12 +111,12 @@ export default function Faq() {
         <div className={`qpanel${swap ? ' swap' : ''}`}>
           <span className="ghost mono">{pad(shown + 1)}</span>
           <div className="qp-top">
-            <span className="qp-count mono">{pad(shown + 1)} / {pad(FAQ.length)}</span>
-            <span className="qp-cat">{q.cat}</span>
+            <span className="qp-count mono">{pad(shown + 1)} / {pad(items_.length)}</span>
+            <span className="qp-cat">{q?.category}</span>
           </div>
           <div className="qp-body">
-            <h3 className="qp-q">{q.q}</h3>
-            <p className="qp-a">{q.a}</p>
+            <h3 className="qp-q">{q?.question}</h3>
+            <p className="qp-a">{q?.answer}</p>
           </div>
           <div className="qp-foot">
             <span className="hint">Didn&apos;t find it here?</span>
@@ -95,6 +127,7 @@ export default function Faq() {
           </div>
         </div>
       </div>
+      </Loader>
     </section>
   )
 }
