@@ -134,8 +134,8 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
   const amount = order ? money(order.amount, order.currency) : sub?.plan ? money(sub.plan.price, sub.plan.currency) : null
 
   return (
-    <div className={`co co-${tone}`}>
-      <div className="co-hero">
+    <div className={`cr cr-${tone}`}>
+      <div className="cr-hero">
         <StatusBadge tone={tone} />
         <span className={`ac-tag ${tone === 'good' ? 'good' : tone === 'bad' ? 'bad' : 'warn'}`}>{copy.tag}</span>
         <h2 id="ac-title">{copy.title}</h2>
@@ -143,7 +143,7 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
       </div>
 
       {(state === 'pending' || state === 'slow') && (
-        <ol className="co-steps" aria-label="Payment progress">
+        <ol className="cr-steps" aria-label="Payment progress">
           {STEPS.map((s, i) => (
             <li key={s} className={i === 0 ? 'done' : i === 1 ? 'now' : undefined}>
               <i>{i === 0 ? <Check /> : i + 1}</i>
@@ -154,7 +154,7 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
       )}
 
       {(planName || amount || order) && (
-        <dl className="co-sum">
+        <dl className="cr-sum">
           {planName && <SumRow k="Plan" v={`${planName} plan`} />}
           {amount && <SumRow k={state === 'success' ? 'Amount paid' : 'Amount'} v={amount} mono />}
           {state === 'success' && sub?.expires_at && (
@@ -169,7 +169,7 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
       )}
 
       {state === 'failed' && (
-        <div className="co-why">
+        <div className="cr-why">
           <b>Common reasons</b>
           <ul>
             {REASONS.map((r) => <li key={r}>{r}</li>)}
@@ -180,7 +180,7 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
       {!PREVIEW && subscription.error && state !== 'failed' && <Bad error={subscription.error} />}
       <Bad error={retryError} />
 
-      <div className="ac-actions co-actions">
+      <div className="ac-actions cr-actions">
         {state === 'success' && (
           <>
             <button type="button" className="btn btn-red" onClick={onDone}>
@@ -236,7 +236,7 @@ function SumRow({ k, v, mono }) {
    "working" even to someone who skips every word on it. */
 function StatusBadge({ tone }) {
   return (
-    <span className={`co-badge ${tone}`} aria-hidden="true">
+    <span className={`cr-badge ${tone}`} aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         {tone === 'good' && <path d="M6 12.5l4 4L18 8" />}
         {tone === 'wait' && <path d="M12 7.5V12l3 2" />}

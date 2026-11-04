@@ -1,0 +1,118 @@
+/* ==========================================================================
+   FOCUS — WCAG 2.4.7 Focus Visible / 2.4.11 Focus Not Obscured
+   ==========================================================================
+   Nothing on this page suppresses the focus ring any more. Two inputs used to
+   carry `outline:none` with only a 11%-alpha glow standing in for it, which is
+   how a keyboard user lost the checkout field.
+
+   The ring is one declaration on :focus-visible, so a mouse click never paints
+   it but Tab always does. --focus is a token, and every dark panel further down
+   redefines it to white, so the ring is drawn against whatever surface it
+   actually lands on rather than assuming a light page. */
+:focus-visible{
+  outline:var(--focus-w) solid var(--focus);
+  outline-offset:var(--focus-gap);
+}
+/* Elements inside a clipping or tightly-packed strip get the ring on the inside,
+   otherwise `overflow:hidden` on the scroller eats it or it collides with the
+   chip next door. Inset rings still follow the border-radius, so they read as
+   the same indicator. */
+.seg button:focus-visible,
+.tabs button:focus-visible,
+.auth-tabs button:focus-visible,
+.ac-link:focus-visible,
+.lang-menu button:focus-visible,
+.acct-menu a:focus-visible,
+.acct-menu button:focus-visible,
+.store:focus-visible,
+.rcard:focus-visible,
+.tile:focus-visible,
+.qitem:focus-visible,
+.fab .opts a:focus-visible{
+  outline-offset:calc(var(--focus-w) * -1);
+}
+/* Dark surfaces flip the ring to white. Each of these paints its own dark
+   background, so a near-black ring would vanish into it. */
+.navyband,.apps,.trial,.cta,.band,.ac-card.dark,.auth-side,.rcard,
+.burger,.fab .toggle{ --focus:#FFFFFF; }
+/* …but .rcard sits on the paper background, and its ring is drawn *outside* the
+   card, so that one goes back to ink. */
+.rcard:focus-visible{ outline-color:var(--ink); }
+
+/* Programmatic focus hand-offs — the panel we just switched to, the success
+   heading that replaced a form. They take focus so a screen reader starts
+   reading in the right place, but they are containers, not controls: a 3px ring
+   round a whole page section reads as an error box, not as "you are here". The
+   move itself is the affordance, and it is announced. */
+.ac-panel:focus,.ac-panel:focus-visible,
+#top:focus,#top:focus-visible,
+#done-title:focus,#done-title:focus-visible{ outline:none; }
+
+/* 2.4.11 Focus Not Obscured — reserve the sticky header's height on anything
+   the browser scrolls into view, so a control never comes to rest underneath it.
+
+   scroll-margin on the target, not scroll-padding on the container. The two do
+   the same job for the document scroller and must not both be set or they add
+   up, but scroll-padding only ever applies to the scroller it is written on —
+   and four things here scroll inside themselves: the auth panel, the account
+   page, the checkout panel and the mobile sheet. Nothing the browser scrolls
+   into view inside those was getting any reservation at all.
+
+   Those overlays have no sticky header of their own, so reserving 98px inside
+   them would only shove their content down for nothing. --scroll-safe is a
+   custom property, and custom properties inherit: the overlays redeclare it and
+   everything inside them picks up the smaller value without repeating the
+   selector list. The header measures 82px on desktop and 76px on mobile; the
+   remainder is the 3px ring, its 3px offset, and room to read the edge. */
+:root{ --scroll-safe:98px; }
+#auth,#account,#checkout,#sheet,.dlg{ --scroll-safe:16px; }
+a,button,input,select,textarea,summary,details,[tabindex],[id]{
+  scroll-margin-top:var(--scroll-safe);
+}
+@media(max-width:640px){ :root{ --scroll-safe:88px; } }
+
+/* ==========================================================================
+   TARGET SIZE — WCAG 2.5.8 (24×24 minimum)
+   ==========================================================================
+   The footer columns, the invoice download links and the inline `.lnk` buttons
+   measured 17–23px tall, because an inline box takes its height from the font
+   and not from the line-height around it. Standalone links get a real box with
+   a 24px floor; the ones with room to breathe are padded out toward 44px. */
+.fcol a,.acct-menu a,.acct-menu button,.ac-table .dl,.lnk,.auth-row a,
+.link-u,.qp-foot .hint + .link-u,.ac-note a,.auth-fine .lnk{
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+}
+/* Footer links have a whole column to themselves. 9px of padding on a 21.75px
+   line box is a 40px row at every width — both the target and the unit the
+   column rhythm below is built from, rather than 44 on desktop and 40 under it. */
+.fcol a{padding-block:9px;min-height:40px;}
+/* an inline link inside running prose is exempt from 2.5.8 (the "inline"
+   exception) but still gets the 24px floor, which costs nothing on a 1.6
+   line-height paragraph */
+.lnk,.auth-row a{padding-block:2px;}
+
+/* ==========================================================================
+   SCREEN-READER UTILITIES
+   ========================================================================== */
+.sr-only{
+  position:absolute !important;width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0;
+}
+/* the skip link is the first thing in the tab order and the only element that
+   is allowed to appear out of nowhere — that is the whole point of it */
+.skip{
+  position:fixed;top:8px;left:8px;z-index:400;
+  transform:translateY(-160%);
+  padding:13px 20px;border-radius:999px;
+  background:var(--ink);color:#fff;font-size:var(--fs-300);font-weight:600;
+  box-shadow:var(--shadow-md);transition:transform .25s var(--ease);
+}
+.skip:focus{transform:none;}
+
+.wrap{max-width:calc(var(--maxw) + var(--pad)*2);margin:0 auto;padding-inline:var(--pad);}
+.sec{padding-block:var(--pad-6);}
+.sec-tight{padding-block:var(--pad-5);}
+.sec-cta{padding-bottom:var(--pad-5);}

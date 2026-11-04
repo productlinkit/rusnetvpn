@@ -1,0 +1,36 @@
+/* ==========================================================================
+   TRANSPARENCY BAND — audit status, usability research, accessibility
+   ========================================================================== */
+/* ---------- audit status ----------
+   Plain on purpose. Every visual cue that says "certified" — a seal, a tick, a
+   green field — would be doing the work the missing report is supposed to do. */
+.astat{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:clamp(24px,4vw,64px);align-items:start;}
+.astat h2{font-size:var(--fs-h3);letter-spacing:-.025em;margin-top:16px;}
+.astat-b p{color:var(--body);font-size:var(--fs-400);line-height:1.7;}
+.astat-b p + p{margin-top:14px;}
+.astat-b b{color:var(--ink);}
+.astat-rows{margin-top:22px;border-top:1px solid var(--line);}
+.astat-rows > div{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:var(--space-4);padding:14px 0;border-bottom:1px solid var(--line);}
+.astat-rows dt{color:var(--muted);font-size:var(--fs-200);font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+.astat-rows dd{color:var(--ink);font-size:var(--fs-300);line-height:1.6;}
+.astat .tiny{margin-top:16px;}
+/* The audit and the usability research are the same promise measured two ways,
+   so they read as one transparency band instead of two sections competing for
+   the same ground: section padding runs on the outside of the pair only, and a
+   hairline marks where the halves meet. Each half stays its own <section> so
+   both keep a landmark and both footer anchors land on a real region. */
+.sec-pair-a{padding-block:var(--pad-5) 0;}
+.sec-pair-m{padding-block:0;}
+.sec-pair-b{padding-block:0 var(--pad-5);}
+.sec-pair-m .astat,.sec-pair-b .astat{margin-top:clamp(30px,3.6vw,46px);padding-top:var(--pad-3);border-top:1px solid var(--line);}
+/* every half after the first carries no eyebrow — the band is labelled once, at
+   the top — so those headings lose the offset that exists only to clear one */
+.sec-pair-m .astat h2,.sec-pair-b .astat h2{margin-top:0;}
+/* The whole transparency band is hidden for now. The markup and every rule
+   above it stay as they are: delete this one rule to bring all three sections
+   back, and restore the three footer links in the Customer service column. */
+#audit-status,#ux-research,#accessibility{display:none;}
+@media(max-width:860px){
+  .astat{grid-template-columns:1fr;}
+  .astat-rows > div{grid-template-columns:1fr;gap:var(--space-1);}
+}

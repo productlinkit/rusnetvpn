@@ -1,56 +1,163 @@
 /* ==========================================================================
    PRICING
    ========================================================================== */
-.price-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;align-items:stretch;}
-@media(max-width:920px){.price-grid{grid-template-columns:1fr;}}
+.price-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:var(--space-4);align-items:stretch;}
+@media(max-width:920px){
+  .price-grid{grid-template-columns:1fr;}
+  /* Stacked, the compare toggle used to land under the dark trial panel, where
+     it read as that panel's button rather than as a way to compare the plan
+     card above it. Ordered here it follows the plan card it belongs to, and
+     the trial panel drops below the comparison table. */
+  .pcard{order:1;}
+  .cmp-toggle{order:2;}
+  .cmp{order:3;}
+  .trial{order:4;}
+}
 /* a grid of equal cells, not a wrapping flex row. wrapping left a ragged second
    row and dropped the Best Deal badge on top of the row above it. */
 .seg{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:3px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-1);
   width:100%;max-width:540px;
   padding:4px;border-radius:999px;background:var(--paper-2);
 }
 .seg button{
-  padding:11px 6px;border-radius:999px;
-  font-size:13.5px;font-weight:600;color:var(--body);text-align:center;white-space:nowrap;
-  transition:background .35s,color .35s,box-shadow .35s;position:relative;
+  padding:9px 6px;border-radius:999px;
+  font-size:var(--fs-200);font-weight:600;color:var(--body);text-align:center;white-space:nowrap;
+  /* named no timing function, so this inherited the CSS initial value: `ease`,
+     cubic-bezier(.25,.1,.25,1) — the most default curve there is, sitting on
+     the control that drives the price roll. --ease-swap because a segment
+     turning on is A becoming B in place: nothing arrives and nothing leaves. */
+  transition:background var(--t-3) var(--ease-swap),color var(--t-3) var(--ease-swap),box-shadow var(--t-3) var(--ease-swap);position:relative;
+  border:1px solid transparent;min-height:44px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
 }
-.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-xs);}
-.seg button .best{position:absolute;top:-9px;right:-6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;}
+/* The saving sits on the control you choose from. It used to appear only after
+   a duration was selected, or inside the comparison table behind a tab — so the
+   switcher offered five names and nothing to choose between them. */
+.segsave{font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--red-text);line-height:1.1;}
+.seg button.on .segsave{color:var(--red-text);}
+@media(max-width:560px){ .segsave{font-size:10px;} .seg button{font-size:var(--fs-100);} }
+/* a white pill on the #EBEAE5 track is 1.08:1 — the selected plan was drawn by a
+   drop shadow and nothing else. The outline gives the state a 3.18:1 boundary
+   (1.4.11) without changing what the control looks like. */
+.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-xs);border-color:var(--line-ui);}
+.seg button .best{position:absolute;top:-9px;right:-6px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;}
 @media(max-width:620px){
-  /* two per row, with the best-value option owning the full last row. every
-     cell ends up the same width and the rows line up. */
-  .seg{grid-template-columns:repeat(2,1fr);gap:4px;padding:5px;border-radius:22px;}
-  .seg button{padding:14px 8px;font-size:14px;border-radius:17px;}
-  .seg button:last-child{grid-column:span 2;}
-  /* inline now that it has a full row to sit on, so it stops overlapping */
-  .seg button .best{position:static;display:inline-block;margin-left:9px;vertical-align:1px;}
+  /* Three per row, with the best-value option taking what is left of the
+     second — two rows instead of three. At two-per-row the switcher stood
+     222px tall on a 390px screen, which pushed the card it controls far
+     enough down that the price and its button were off the bottom of the
+     viewport: you picked a plan and then had to scroll to see what you had
+     picked. Every cell is still the same width and the rows still line up. */
+  .seg{grid-template-columns:repeat(3,1fr);gap:var(--space-1);padding:5px;border-radius:20px;}
+  .seg button{padding:9px 6px;font-size:var(--fs-200);border-radius:15px;}
+  /* The wide cell flows in a row: the button is a column flex, so the name, the
+     pill and the saving each took a line of their own and the selected cell
+     stood half again as tall as the rest of the grid. Across two cells they
+     fit on one. */
+  .seg button:last-child{grid-column:span 2;flex-direction:row;flex-wrap:wrap;column-gap:var(--space-2);row-gap:2px;}
+  /* in the flow now that it has room on its row, so it stops overlapping */
+  .seg button .best{position:static;display:inline-block;vertical-align:1px;}
 }
-.pcard{background:var(--card);border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);border:1px solid var(--line-2);display:flex;flex-direction:column;}
-.pcard .amt{display:flex;align-items:flex-start;gap:6px;margin-top:26px;}
+.pcard{background:var(--card);border-radius:var(--r-xl);padding:var(--pad-3);border:1px solid var(--line-2);display:flex;flex-direction:column;}
+.pcard .amt{display:flex;align-items:flex-start;gap:var(--space-2);margin-top:26px;}
 .pcard .amt .cur{font-size:26px;font-weight:600;margin-top:10px;color:var(--body);}
-/* A trailing symbol sits on the baseline, not raised: "899 ₽", not "899₽". */
-.pcard .amt .cur.after{margin-top:0;align-self:flex-end;margin-bottom:14px;margin-left:6px;}
-.pcard .amt .val{font-size:clamp(52px,7vw,86px);font-weight:700;letter-spacing:-.05em;line-height:.92;transition:opacity .3s,transform .35s var(--ease);}
-.pcard .amt.flip .val{opacity:0;transform:translateY(-8px);}
-.pcard .per{font-size:14.5px;color:var(--body);margin-top:14px;}
+.pcard .amt .val{font-size:var(--fs-d1);font-weight:700;letter-spacing:-.05em;line-height:.92;}
+/* The price used to fade out and back in on one curve, over the same 8px, in
+   the same direction — so the old figure left upward and the new one arrived
+   from upward too. Two states, one gesture: it read as the number blinking
+   rather than as a value being replaced, and there was nothing in it to tell
+   you which way the plan had moved.
+
+   Now it rolls, like the split-flap a price deserves. Out goes up on the exit
+   curve and is over quickly; in comes up from below on the seat curve and takes
+   more than twice as long, because arriving is the half you are meant to read.
+   Travel is in em so it tracks the clamped font size instead of being 8px
+   against 52px on a phone and 8px against 86px on a desktop — the same gesture
+   at both ends rather than the same number of pixels. */
+/* Transitions, not keyframes, and the reason is a failure mode rather than a
+   preference. A keyframe animation whose timeline stops advancing keeps
+   applying the keyframe it is parked on — measured here as
+   priceIn:running:currentTime=0 held for 1.4s, which is opacity 0, which is a
+   price nobody can see. It happened in 3 of 12 runs. `forwards` does not help:
+   at currentTime 0 the animation is active and the 0% frame wins. A transition
+   fails the other way — if it never runs, the element is simply already at the
+   target, and the target here is the readable resting state. That is why the
+   original .flip transition never had this bug, and it is the property worth
+   keeping. Same rule as the swap timer: every way this can fail must fail with
+   the number on screen. */
+.pcard .amt .val{
+  opacity:1;transform:none;
+  transition:opacity var(--t-4) var(--ease-seat),transform var(--t-4) var(--ease-seat);
+}
+/* leaving: up and out, on the exit curve and over a third of the time */
+.pcard .amt.roll-out .val{
+  opacity:0;transform:translateY(-.30em);
+  transition:opacity var(--t-1) var(--ease-exit),transform var(--t-1) var(--ease-exit);
+}
+/* the single committed frame between the two halves: the new figure parked
+   below, placed with no transition so it does not slide down into position
+   before rising back up. Applied and removed in one synchronous block with a
+   forced reflow between, so the roll never waits on a frame that may not come. */
+.pcard .amt.roll-set .val{
+  opacity:0;transform:translateY(.38em);
+  transition:none;
+}
+/* The guaranteed landing, and the reason it has to exist. Moving the figure to
+   a hidden parked state and relying on a transition to bring it back is only
+   safe if that transition runs, and it does not always: on a fresh load
+   paintPlan() rolls the default plan while the card is still off screen, the
+   transition is created but its timeline never advances, and the price stays
+   at opacity 0 and .38em low — invisible, from load, until something forces a
+   recalc. Measured at rest as matrix(1,0,0,1,0,32.68), which is exactly .38em
+   of an 86px figure. Transitions fail toward their target only when the stuck
+   state is the visible one; here the stuck state is the hidden one, so the
+   landing has to be asserted rather than assumed. Same contract as the counter
+   and the swap: a timer lands it, the motion is only how it looks getting
+   there. */
+.pcard .amt.roll-done .val{transition:none;opacity:1;transform:none;}
+.pcard .per{font-size:var(--fs-300);color:var(--body);margin-top:14px;}
 .pcard .per b{color:var(--ink);}
-.pcard .save{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;border-radius:999px;background:#E9F9F0;color:#0B8A4E;font-size:12.5px;font-weight:700;}
-.pcard .feat{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:30px;padding-top:26px;border-top:1px solid var(--line-2);}
-.pcard .feat li{display:flex;gap:10px;font-size:14.5px;color:var(--body);}
+.pcard .save{display:inline-flex;align-items:center;gap:var(--space-2);margin-top:16px;padding:7px 13px;border-radius:999px;background:var(--green-tint);color:var(--green-text);font-size:var(--fs-200);font-weight:700;}
+.pcard .feat{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-5);margin-top:30px;padding-top:26px;border-top:1px solid var(--line-2);}
+.pcard .feat li{display:flex;gap:var(--space-3);font-size:var(--fs-300);color:var(--body);}
 .pcard .feat svg{width:15px;height:15px;color:var(--red);flex:0 0 auto;margin-top:4px;}
 @media(max-width:560px){.pcard .feat{grid-template-columns:1fr;}}
 .pcard .btn{margin-top:auto;align-self:flex-start;}
-.pcard .fine{font-size:12.5px;color:var(--muted);margin-top:14px;}
-.trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:clamp(26px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:26px;position:relative;overflow:hidden;}
-.trial::after{content:"";position:absolute;bottom:-40%;left:-20%;width:70%;height:100%;background:radial-gradient(circle,rgba(37,99,235,.35),transparent 65%);}
-.trial h3{color:#fff;font-size:clamp(24px,2.6vw,34px);position:relative;z-index:2;}
-.trial p{color:rgba(255,255,255,.66);font-size:15px;margin-top:12px;position:relative;z-index:2;}
-.trial .paylist{display:flex;flex-wrap:wrap;gap:7px;position:relative;z-index:2;}
+/* the auto-renewal terms — the other confirmed 1.4.3 failure, at 12.5px and
+   2.74:1. It is the sentence that tells you your card gets charged again, so it
+   is the last thing on the page that should be hard to read. */
+.pcard .fine{font-size:var(--fs-200);color:var(--muted);margin-top:14px;line-height:1.55;max-width:52ch;}
+.trial{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:var(--pad-3);display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-6);position:relative;overflow:hidden;}
+/* The glow was a `circle` inside a 400x722 box. farthest-corner sizing put its
+   transparent stop at a ~268px radius while the box's own half-width was
+   200px — so the wash was still around .09 alpha where the box ended and got
+   cut off flat. That straight vertical edge down the middle of the card was
+   the whole of the "hard transition"; the colours were never the problem.
+   `ellipse closest-side` lands the last stop exactly on the box edge, so
+   there is nothing left to clip. The stops in between are an eased ramp
+   rather than one straight run to zero, which is what stops the falloff
+   reading as a ring — perceived lightness is not linear in alpha. The final
+   stop keeps the hue at zero alpha instead of `transparent`, which is
+   rgba(0,0,0,0) and drags the blend toward grey. */
+.trial::after{
+  content:"";position:absolute;bottom:-38%;left:-26%;width:96%;height:104%;
+  background:radial-gradient(ellipse closest-side,
+    rgba(37,99,235,.38) 0%,
+    rgba(37,99,235,.33) 16%,
+    rgba(37,99,235,.25) 33%,
+    rgba(37,99,235,.16) 50%,
+    rgba(37,99,235,.09) 66%,
+    rgba(37,99,235,.04) 81%,
+    rgba(37,99,235,0) 100%);
+}
+.trial h3{color:#fff;font-size:var(--fs-h3);position:relative;z-index:2;}
+.trial p{color:rgba(255,255,255,.66);font-size:var(--fs-400);margin-top:12px;position:relative;z-index:2;}
+.trial .paylist{display:flex;flex-wrap:wrap;gap:var(--space-2);position:relative;z-index:2;}
 /* white chips: half these marks are black or near-black, so on the dark card
    they need their own light plate rather than a recolour that breaks the brand */
 .trial .paylist span{
-  display:inline-flex;align-items:center;gap:7px;
+  display:inline-flex;align-items:center;gap:var(--space-2);
   padding:7px 11px;border-radius:10px;
   background:#fff;color:var(--ink);
   font-size:11.5px;font-weight:600;line-height:1;white-space:nowrap;
@@ -62,4 +169,6 @@
 .paylogo.pl-paypal{height:17px;}
 .paylogo.pl-apple{height:16px;}
 .paylogo.pl-google{height:16px;}
-.paylogo.pl-stripe{height:18px;}
+
+/* A trailing symbol sits on the baseline, not raised: "899 ₽", not "899₽". */
+.pcard .amt .cur.after{margin-top:0;align-self:flex-end;margin-bottom:14px;margin-left:6px;}

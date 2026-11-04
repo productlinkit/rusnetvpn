@@ -1,7 +1,7 @@
 /* ==========================================================================
    CTA + FOOTER
    ========================================================================== */
-.cta{position:relative;border-radius:var(--r-xl);overflow:hidden;color:#fff;padding:clamp(40px,5.4vw,92px) clamp(22px,3.4vw,64px);text-align:center;}
+.cta{position:relative;border-radius:var(--r-xl);overflow:hidden;color:#fff;padding:var(--pad-5) var(--pad-4);text-align:center;}
 .cta .media{position:absolute;inset:0;}
 .cta .media img{filter:saturate(.5) brightness(.45);}
 /* stands in for the photo until one is dropped in: navy, dot grid, red glow */
@@ -19,38 +19,123 @@
 .cta .veil{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(14,18,22,.82),rgba(14,18,22,.94));}
 .cta .spot{position:absolute;inset:0;z-index:2;background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(225,39,48,.30),transparent 70%);transition:opacity .4s;opacity:0;}
 .cta:hover .spot{opacity:1;}
-.cta .inner{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:22px;}
+.cta .inner{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:var(--space-6);}
 .cta h2{color:#fff;max-width:760px;}
 .cta h2 .serif{color:var(--red-2);}
 .cta p{color:rgba(255,255,255,.66);max-width:520px;}
-.form{display:flex;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:7px;border-radius:999px;backdrop-filter:blur(10px);max-width:100%;}
-.form input{background:none;border:0;outline:none;padding:12px 20px;font-size:15px;color:#fff;width:min(300px,52vw);}
-.form input::placeholder{color:rgba(255,255,255,.45);}
-.cta .row{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
-.cta .row span{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.55);}
+/* the pill IS the field boundary — at .16 alpha it measured 1.64:1 against the
+   panel behind it, so there was nothing telling you where to type (1.4.11) */
+.form{display:flex;gap:var(--space-2);background:rgba(255,255,255,.1);border:1px solid var(--line-ui-dark);padding:7px;border-radius:999px;backdrop-filter:blur(10px);max-width:100%;transition:border-color .25s,background .25s;}
+.form:focus-within{border-color:#fff;background:rgba(255,255,255,.16);}
+/* `outline:none` used to live here with nothing replacing it. The ring now comes
+   from the shared :focus-visible rule, drawn white by the .cta token override. */
+.form input{background:none;border:0;padding:12px 20px;font-size:var(--fs-400);color:#fff;width:min(300px,52vw);}
+.form input::placeholder{color:rgba(255,255,255,.72);}
+.form.bad{border-color:#FF9AA0;background:rgba(255,80,90,.18);}
+.cta-form-wrap{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);width:100%;max-width:440px;}
+.cta-lbl{font-size:var(--fs-200);font-weight:600;color:rgba(255,255,255,.92);align-self:center;}
+.cta-err{
+  display:none;align-items:center;gap:var(--space-2);min-height:24px;
+  font-size:var(--fs-200);font-weight:600;color:#FFC2C6;
+}
+.cta-err.on{display:flex;}
+.cta-err::before{
+  content:"";flex:0 0 auto;width:15px;height:15px;background:#FFC2C6;
+  -webkit-mask:var(--ico-alert) center/15px no-repeat;mask:var(--ico-alert) center/15px no-repeat;
+}
+.cta .row{display:flex;gap:var(--space-6);flex-wrap:wrap;justify-content:center;margin-top:6px;}
+.cta .row span{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-200);color:rgba(255,255,255,.55);}
 .cta .row svg{width:14px;height:14px;color:var(--red-2);}
 
-footer{padding-block:clamp(50px,5vw,80px) 40px;}
-.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px;border-bottom:1px solid var(--line);}
-@media(max-width:860px){.fgrid{grid-template-columns:1fr 1fr;gap:34px;}}
-@media(max-width:520px){.fgrid{grid-template-columns:1fr;}}
-.fgrid .about p{font-size:14.5px;color:var(--body);margin-top:18px;max-width:300px;}
-.fcol h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;font-weight:700;}
-.fcol a{display:block;font-size:14.5px;color:var(--body);padding:6px 0;transition:color .25s,transform .35s var(--ease);}
-.fcol a:hover{color:var(--red);transform:translateX(3px);}
-.fbot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:26px;}
-.fbot .soc{display:flex;gap:8px;}
-.fbot .soc a{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:background .3s,color .3s,border-color .3s;}
+footer{padding-block:var(--pad-5) 40px;}
+.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:var(--space-8);padding-bottom:44px;border-bottom:1px solid var(--line);}
+/* Two-up put the short brand block beside the tallest link column and left a
+   column-height hole under it. The brand takes the full row instead and the
+   three link columns share one, which is both shorter and level. */
+@media(max-width:860px){
+  .fgrid{grid-template-columns:repeat(3,1fr);gap:var(--space-6);padding-bottom:32px;}
+  .fgrid .about{grid-column:1/-1;}
+}
+/* below this the three columns are narrower than the longest link label */
+@media(max-width:620px){.fgrid{grid-template-columns:1fr;gap:var(--space-6);}}
+/* ---------- one rhythm for the whole grid ----------
+   18px from a heading to the first line of text under it, in every column, at
+   every width. The links carry a 40px tap target, so 9px of that 18px is the
+   link's own padding and 9px is the heading's margin — which is why the margin
+   below reads as half the gap it produces, and why the address paragraph is
+   padded by the same 9px. Every column then starts on the same baseline and
+   ends on the same one, instead of the padded lists sitting lower than the
+   unpadded prose beside them. */
+.fgrid .about p,.fcol p{font-size:var(--fs-300);line-height:1.6;color:var(--body);max-width:34ch;}
+.fgrid .about p{margin-top:18px;}
+.fcol p{padding-block:9px;}
+/* A column, explicitly. The 2.5.8 rule above turns these links into inline-flex
+   boxes, and the markup writes them with no whitespace between the tags — so
+   without a column container they butted into each other and wrapped mid-list
+   instead of stacking one per row. */
+.fcol{display:flex;flex-direction:column;align-items:flex-start;}
+/* Title, not more text. --muted and --body are a hair apart (#5C636B against
+   #4E5964), so a grey uppercase label above grey links read as two weights of
+   the same thing. The label is ink and the content under it is body: small,
+   dark and tracked says heading; larger and grey says what the heading is for.
+   (The markup headings are <h3> — h2 belongs to the sections above.) */
+.fcol h3{
+  font-size:var(--fs-100);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink);font-weight:700;line-height:1.2;margin-bottom:9px;
+}
+/* Underlined, because in a column of 14.5px body-grey text there was nothing
+   to tell "Telegram" (a link) from "Moscow, Russia" (an address). At rest the
+   rule is a --line-3 hairline; hover and focus bring it up to the text colour,
+   so the affordance is visible before the pointer arrives and unmistakable
+   after. */
+.fcol a{
+  font-size:var(--fs-300);line-height:1.5;color:var(--body);
+  text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--line-3);
+  transition:color .25s,text-decoration-color .25s,transform .35s var(--ease);
+}
+.fcol a:hover,.fcol a:focus-visible{color:var(--red-text);text-decoration-color:currentColor;}
+.fcol a:hover{transform:translateX(3px);}
+.fbot{display:flex;align-items:center;justify-content:space-between;gap:var(--space-5);flex-wrap:wrap;padding-top:26px;}
+/* the rhythm inside a column is width-independent now — only the space around
+   the block tightens, and the brand paragraph gives up its measure once it has
+   a whole row to itself. */
+@media(max-width:860px){
+  footer{padding-block:var(--pad-4) 30px;}
+  .fgrid .about p{max-width:none;}
+  .fbot{padding-top:20px;}
+}
+.fbot .soc{display:flex;gap:var(--space-2);}
+.fbot .soc a{width:38px;height:38px;border-radius:50%;border:1px solid var(--line-ui);display:grid;place-items:center;transition:background .3s,color .3s,border-color .3s;}
 .fbot .soc a:hover{background:var(--ink);color:#fff;border-color:transparent;}
 .fbot .soc svg{width:15px;height:15px;}
 
 /* FAB */
-.fab{position:fixed;right:22px;bottom:22px;z-index:130;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-.fab .opts{display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .35s var(--ease),transform .45s var(--ease);}
-.fab.on .opts{opacity:1;transform:none;pointer-events:auto;}
-.fab .opts a{display:inline-flex;align-items:center;gap:9px;padding:11px 17px;border-radius:999px;background:#fff;box-shadow:var(--shadow-md);font-size:13.5px;font-weight:600;}
+/* pointer-events:none on the container, restored on the parts that are actually
+   drawn. The closed .opts list keeps its layout box (it is hidden with
+   visibility, not display, so the links stay out of the tab order without the
+   layout jumping), which made the wrapper a tall invisible rectangle above the
+   button — and it was intercepting hit-testing over the footer's social links.
+   On mobile that put an unclickable dead zone on top of them. */
+.fab{position:fixed;right:22px;bottom:22px;z-index:130;display:flex;flex-direction:column;align-items:flex-end;gap:var(--space-3);pointer-events:none;}
+.fab .toggle{pointer-events:auto;}
+/* visibility, not just opacity: an invisible link that still takes Tab is a place
+   a keyboard user can get stranded with nothing on screen to explain it */
+.fab .opts{display:flex;flex-direction:column;gap:var(--space-2);opacity:0;visibility:hidden;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .35s;}
+.fab.on .opts{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s 0s;}
+.fab .opts a{display:inline-flex;align-items:center;gap:var(--space-2);padding:11px 17px;border-radius:999px;background:#fff;box-shadow:var(--shadow-md);font-size:var(--fs-200);font-weight:600;}
 .fab .opts svg{width:15px;height:15px;}
 .fab .toggle{width:56px;height:56px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;box-shadow:0 18px 34px -14px rgba(225,39,48,.8);transition:transform .5s var(--ease);}
 .fab.on .toggle{transform:rotate(135deg);}
 .fab .toggle svg{width:22px;height:22px;}
+/* Stands down while a control it covers has focus — see the fabYield handler.
+   Deliberately opacity + pointer-events, NOT visibility. visibility:hidden also
+   removes the button from the tab order, so once it had yielded Tab skipped past
+   it and the chat button became unreachable by keyboard — a worse bug than the
+   one being fixed. opacity:0 keeps it focusable; pointer-events:none is what
+   actually takes it out of hit-testing so the card behind it is unobstructed.
+   It reappears the instant focus reaches it, because fabYield clears the class
+   for anything inside the FAB. */
+.fab.yield{opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;}
+.fab.yield,.fab.yield *{pointer-events:none;}
 @media(max-width:640px){.fab{right:14px;bottom:14px;}}

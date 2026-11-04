@@ -1,7 +1,7 @@
 /* ==========================================================================
    RAIL — expanding cards (click to open, siblings shrink)
    ========================================================================== */
-.rail{display:flex;gap:12px;height:clamp(420px,50vw,560px);}
+.rail{display:flex;gap:var(--space-3);height:clamp(420px,50vw,560px);}
 .rcard{
   position:relative;flex:1 1 0;min-width:0;overflow:hidden;
   border-radius:var(--r-lg);cursor:pointer;text-align:left;
@@ -17,7 +17,11 @@
 /* a collapsed card is a narrow slice of a bright app screen, so darken it enough
    for the vertical label to read. the open card keeps the light gradient. */
 .rail.has-open .rcard:not(.is-open) .veil{background:linear-gradient(180deg,rgba(10,14,20,.66),rgba(10,14,20,.8));}
-.rcard .num{position:absolute;z-index:4;top:20px;left:20px;font-size:12px;font-weight:700;letter-spacing:.1em;color:#fff;opacity:.72;}
+/* The veil is only .34 opaque at the top of the card, so this ordinal and the
+   toggle beside it are the two things sitting on almost-bare photo. Against a
+   bright frame the number measured 1.67:1. A shadow halo is what carries text
+   over imagery you do not control — it holds whatever photo is swapped in. */
+.rcard .num{position:absolute;z-index:4;top:20px;left:20px;font-size:var(--fs-100);font-weight:700;letter-spacing:.1em;color:#fff;opacity:.95;text-shadow:0 1px 3px rgba(6,9,12,.9),0 0 12px rgba(6,9,12,.7);}
 .rcard .vert{
   position:absolute;z-index:4;left:0;right:0;bottom:22px;display:grid;place-items:center;
   transition:opacity .4s;
@@ -29,31 +33,43 @@
 }
 .rcard.is-open .vert{opacity:0;pointer-events:none;}
 .rcard .full{
-  position:absolute;z-index:4;left:0;bottom:0;padding:clamp(20px,2.2vw,32px);
+  position:absolute;z-index:4;left:0;bottom:0;padding:var(--pad-2);
   width:min(430px,86%);opacity:0;transform:translateY(14px);pointer-events:none;
   transition:opacity .5s .12s var(--ease),transform .6s .12s var(--ease);
 }
 .rcard.is-open .full{opacity:1;transform:none;pointer-events:auto;}
 .rcard .full h3{color:#fff;margin-bottom:10px;}
-.rcard .full p{color:rgba(255,255,255,.78);font-size:15px;line-height:1.55;}
+/* .78 alpha composited to #E2DEDE over the photo and measured 3.89:1. The alpha
+   was buying hierarchy against the h3; .93 keeps that separation visible while
+   clearing 4.5:1, and the veil below guarantees the ground it is read against. */
+.rcard .full p{color:rgba(255,255,255,.93);font-size:var(--fs-400);line-height:1.55;}
+/* The resting veil is built for the collapsed slice: it thins to .05 at 34% so
+   the artwork reads. Open, that thin band lands exactly where .full's paragraph
+   sits, which is how the text ended up on a mid-brown #79696A. Opening the card
+   re-ramps it so everything from 58% down sits at .62 or darker — enough for
+   white text over even a near-white photo (5.06:1), so this holds for whatever
+   image replaces the placeholder rather than only for the current one. */
+.rcard.is-open .veil{background:linear-gradient(180deg,rgba(14,18,22,.30) 0%,rgba(14,18,22,.10) 26%,rgba(14,18,22,.62) 58%,rgba(14,18,22,.90) 100%);}
 /* hugs its label — it is a tag, not a call to action, so it stays slim */
 .rcard .full .pill{
-  display:inline-flex;width:fit-content;max-width:100%;align-items:center;gap:7px;
+  display:inline-flex;width:fit-content;max-width:100%;align-items:center;gap:var(--space-2);
   margin-top:15px;padding:6px 12px;border-radius:999px;
   background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);
-  color:#fff;font-size:12.5px;font-weight:600;line-height:1.35;
+  color:#fff;font-size:var(--fs-100);font-weight:600;line-height:1.35;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
 .rcard .full .pill svg{width:12px;height:12px;flex:0 0 auto;}
 .rcard .plus{
   position:absolute;z-index:4;top:16px;right:16px;width:34px;height:34px;border-radius:50%;
-  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);
+  /* dark glass, not light: this sits on the thin part of the veil, and a white
+     scrim over a bright photo left the "+" and its edge at barely 1.5:1 */
+  background:rgba(8,11,15,.55);border:1px solid var(--line-ui-dark);backdrop-filter:blur(8px);
   display:grid;place-items:center;color:#fff;transition:transform .5s var(--ease),background .4s;
 }
 .rcard.is-open .plus{transform:rotate(45deg);background:var(--red);border-color:transparent;}
 .rcard .plus svg{width:13px;height:13px;}
 @media(max-width:900px){
-  .rail{flex-direction:column;height:auto;gap:10px;}
+  .rail{flex-direction:column;height:auto;gap:var(--space-3);}
   .rcard{flex:0 0 auto;height:88px;transition:height .7s var(--ease);}
   .rail.has-open .rcard{flex-grow:1;}
   .rail .rcard.is-open{height:clamp(400px,86vw,470px);}

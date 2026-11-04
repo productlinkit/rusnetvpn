@@ -2,13 +2,16 @@
    RusVPN — stylesheet entry
 
    The order below is the order the rules appeared in the original single-file
-   page and it is load-bearing: responsive.css closes with the narrow-screen
-   overrides and the reveal rules, both of which have to win over everything
-   that comes before them. Add new files above responsive.css, never after.
+   page and it is load-bearing: responsive.css carries the narrow-screen
+   overrides and the reveal rules, which have to win over the section files
+   before them. components.css follows it because the shared pieces it holds —
+   dialogs, toasts, search, empty states, the reduced-motion and forced-colors
+   overrides — came after it in the original and must win over it in turn.
    ========================================================================== */
 @import './fonts.css';
 
 @import './tokens.css';
+@import './a11y.css';
 @import './typography.css';
 @import './buttons.css';
 @import './header.css';
@@ -21,5 +24,8 @@
 @import './faq.css';
 @import './cta-footer.css';
 @import './auth.css';
+@import './checkout.css';
+@import './transparency.css';
 @import './account.css';
 @import './responsive.css';
+@import './components.css';

@@ -15,6 +15,7 @@ import Faq from './sections/Faq'
 import Cta from './sections/Cta'
 import { useReveal } from './hooks'
 import { SessionProvider, useSession } from './state/session'
+import { FeedbackProvider } from './components/Feedback'
 
 /* ==========================================================================
    APP
@@ -91,8 +92,10 @@ function Page() {
 
 export default function App() {
   return (
-    <SessionProvider>
-      <Page />
-    </SessionProvider>
+    <FeedbackProvider>
+      <SessionProvider>
+        <Page />
+      </SessionProvider>
+    </FeedbackProvider>
   )
 }

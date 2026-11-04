@@ -4,17 +4,157 @@
 :root{
   --red:#E12730; --red-2:#F0353F; --red-deep:#A5121A; --red-tint:#FFF0F0;
   --blue:#12356E; --blue-2:#2563EB; --blue-tint:#EEF3FF;
-  --ink:#0E1216; --ink-2:#1C2430; --body:#4E5964; --muted:#8B949F;
+  --ink:#0E1216; --ink-2:#1C2430; --body:#4E5964; --muted:#5C636B;
   --navy:#0D1E3C; --navy-2:#152A52;
   --paper:#F3F2EF; --paper-2:#EBEAE5; --card:#FFFFFF;
   --line:rgba(14,18,22,.10); --line-2:rgba(14,18,22,.06); --line-3:rgba(14,18,22,.16);
+
+  /* ---------- CONTRAST-SAFE TEXT TOKENS (WCAG 1.4.3, 4.5:1) ----------
+     --red / --green-ok / --amber are the *brand* colours: fine as fills, as
+     icons, and as 3:1 large text. They do NOT clear 4.5:1 as small text on our
+     light surfaces, so anything set in them at body size uses the -text pair.
+       --red-text   #BE1A23  ≥5.19 on paper, card, red-tint, #FFF7F7, #FFF8F8
+       --green-text #087040  ≥5.51 on paper, card, #E9F9F0
+       --amber-text #B54708  ≥4.99 on card, #FFF4E5
+     --muted was #8B949F: 2.74:1 on paper and 3.07:1 on card — the two confirmed
+     1.4.3 failures. #5C636B measures 5.43 / 6.08 / 5.05 (paper / card / paper-2). */
+  --red-text:#BE1A23; --green-ok:#12B76A; --green-text:#087040;
+
+  /* ---------- RED THAT CARRIES WHITE TEXT ----------
+     The mirror of --red-text. Brand red is light enough that white sitting on it
+     fails 1.4.3, which pixel sampling caught on every primary CTA:
+       --red-2 #F0353F -> 3.97:1   (top of the .btn-red gradient)
+       midpoint #E82E37 -> 4.31:1
+       --red   #E12730 -> 4.63:1   (only the very bottom edge passed)
+     A gradient has to clear 4.5 at its LIGHTEST point, not on average, so both
+     stops are darkened: #D92A33 measures 4.85 and #C81E27 measures 5.72. The
+     brand red is untouched for fills, icons and 3:1 non-text use. */
+  --red-fill-2:#D92A33; --red-fill:#C81E27;
+  --amber:#F79009; --amber-text:#B54708;
+  --green-tint:#E9F9F0; --amber-tint:#FFF4E5;
+
+  /* ---------- NON-TEXT CONTRAST (WCAG 1.4.11, 3:1) ----------
+     --line / --line-2 / --line-3 are decorative hairlines (1.13–1.41:1) and stay
+     that way — they separate, they never *identify* a control. Any boundary that
+     is the only thing drawing an interactive control or its state uses --line-ui,
+     which is the faintest grey that still clears 3:1 on every light surface we
+     paint on (3.18 on paper-2, the worst case). --line-ui-dark is its counterpart
+     on the navy and ink panels (3.98 on navy). */
+  --line-ui:#7C838B; --line-ui-dark:rgba(255,255,255,.42);
+
+  /* Glyphs used as CSS masks, so a state that is announced in text also carries a
+     shape — colour is never the only thing saying "this went wrong" (1.4.1). */
+  --ico-alert:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 3.1a1.05 1.05 0 0 1 1.05 1.13l-.3 4.2a.75.75 0 0 1-1.5 0l-.3-4.2A1.05 1.05 0 0 1 8 3.1zm0 7.7a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3z'/%3E%3C/svg%3E");
+  --ico-check:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6.2 12.4 2.4 8.6l1.3-1.3 2.5 2.5 6.1-6.1 1.3 1.3z'/%3E%3C/svg%3E");
+
+  /* ---------- FOCUS (WCAG 2.4.7 / 2.4.11) ----------
+     One token, redefined by every dark container further down, so a ring is
+     always drawn against the surface it actually lands on: ink on paper measures
+     16.8:1, white on navy 16.56:1. Never below 3:1, wherever focus goes. */
+  --focus:#0E1216; --focus-w:3px; --focus-gap:3px;
   --shadow-xs:0 2px 6px rgba(14,18,22,.05);
   --shadow-sm:0 16px 34px -22px rgba(14,18,22,.30);
   --shadow-md:0 30px 60px -34px rgba(14,18,22,.34);
   --shadow-lg:0 60px 120px -50px rgba(14,18,22,.42);
   --r-xl:34px; --r-lg:26px; --r-md:18px; --r-sm:12px;
   --pad:112px; --maxw:1280px;
-  --ease:cubic-bezier(.22,1,.36,1);
+
+  /* ---------- SPACE ----------
+     Base 4, not 8. An 8px grid would have to round 44px, and 44 is not a taste
+     decision here — it is the target size 2.5.8 is measured against, with the
+     24px floor beside it. A scale that cannot express its own accessibility
+     minimums is not a scale, it is a second set of exceptions. */
+  --space-1:4px;  --space-2:8px;  --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px;
+  --space-9:48px; --space-10:64px;
+
+  /* ---------- FLUID PADDING ----------
+     Thirty-three fluid paddings across seventeen distinct ramps: the same
+     one-decision-per-component drift the heading ramps had, in the property
+     that decides how much room everything gets.
+
+     Three of the six steps are lifted unchanged from ramps the page already
+     repeats — 44 on the three cards, 84 on the section band, 132 on the
+     section rhythm — so most of these declarations keep the exact value they
+     had and only stop restating it. The scale was fitted to the page rather
+     than the page rounded into the scale. */
+  --pad-1:clamp(18px,2.2vw,26px);  /* table rows, list items */
+  --pad-2:clamp(20px,2.6vw,30px);  /* small cards and tiles */
+  --pad-3:clamp(26px,3vw,44px);    /* the standard card */
+  --pad-4:clamp(28px,3.6vw,56px);  /* large panels */
+  --pad-5:clamp(56px,6vw,84px);    /* section blocks */
+  --pad-6:clamp(72px,9vw,132px);   /* the page's own rhythm */
+  /* 20 and 40 are in the scale because the page already uses them and they are
+     already multiples of the base. A scale that omits a step its own layout
+     depends on does not tidy that step, it renames it as an exception. */
+
+  /* ---------- TYPE ----------
+     Body ran on eight sizes a half-pixel apart (12/12.5/13/13.5/14/14.5/15/
+     15.5). Nobody reads a half pixel; what it produces is drift, where two
+     components that should match are off by an amount too small to look
+     deliberate and too large to be nothing. Four steps, each pair rounded up
+     to its shared upper value. */
+  --fs-100:12.5px;  /* meta, eyebrows, table labels */
+  --fs-200:13.5px;  /* dense body, list rows */
+  --fs-300:14.5px;  /* default body */
+  --fs-400:15.5px;  /* lead body, section intros */
+
+  /* Line-height by role, not by size: prose needs room to track back to the
+     next line, display type needs the opposite or the words stop reading as
+     one phrase. */
+  --lh-display:1.06; --lh-head:1.2; --lh-ui:1.45; --lh-body:1.6; --lh-flat:1;
+
+  /* ---------- HEADING RAMP ----------
+     Twenty-five bespoke clamp() ramps, every one used exactly once. A ramp per
+     component is not a scale — it is twenty-five decisions nobody can check
+     against each other, which is how .apps h2 ended up at 46px beside every
+     other section heading at 54px.
+
+     Five steps, and the two that were never headings kept out of them: the
+     price and the stat numerals are display figures sized to their container,
+     and folding them into h1-h5 would tie a heading's size to a number's. */
+  --fs-h1:clamp(34px,6vw,80px);    /* the hero, once per page */
+  --fs-h2:clamp(27px,4.1vw,54px);  /* section headings — the established 54px */
+  --fs-h3:clamp(24px,3vw,36px);    /* sub-sections, card titles */
+  --fs-h4:clamp(22px,2.4vw,30px);  /* panel and dialog titles */
+  --fs-h5:clamp(18px,1.7vw,23px);  /* the smallest thing still a heading */
+  --fs-d1:clamp(52px,7vw,86px);    /* the price */
+  --fs-d2:clamp(30px,3.4vw,44px);  /* stat numerals */
+  /* ---- motion ----
+     The page ran everything off one token, cubic-bezier(.22,1,.36,1). That is
+     easeOutQuint off the shelf, and using it for entrances, exits, hovers and
+     state swaps alike is the thing that reads as "framework default": no
+     gesture can mean anything when every gesture is the same. Its shape is
+     also the problem — y hits 1 by x=.22, so ~90% of the distance is covered
+     in the first third and what you perceive is a snap followed by nothing.
+
+     What makes a motion system ownable is not an exotic curve; a curve odd
+     enough to be distinctive on its own mostly just looks broken. It is the
+     relationships: enter and exit are different jobs and get different curves,
+     exits are shorter than entrances because leaving is not the half you are
+     meant to read, and layers lead and follow instead of moving on one clock.
+
+     The character here is a connection engaging — a switch thrown, a bolt
+     seated. Decisive commit, readable travel, firm arrival, no wobble. Bounce
+     is deliberately not in the family: it reads as toy, and this is a product
+     whose whole claim is that it holds. */
+  --ease-enter:cubic-bezier(.21,.78,.26,1);
+  /* the exact reflection of --ease-enter, (1-x2,1-y2,1-x1,1-y1) — an exit that
+     is the entrance run backwards is what makes the pair read as one hand */
+  --ease-exit:cubic-bezier(.74,0,.79,.22);
+  /* A to B in place, where there is no arrival to sell and no departure */
+  --ease-swap:cubic-bezier(.62,.02,.24,1);
+  /* the accent: 6% past the mark, then settle. Only where the travel is big
+     enough for 6% to register, and never on a number — a counter that overran
+     its value would be telling you something we do not mean. */
+  --ease-seat:cubic-bezier(.18,.86,.28,1.06);
+  /* --ease stays as the entrance so the sixty-odd transitions already written
+     against it inherit the new character without restating a duration each */
+  --ease:var(--ease-enter);
+  --t-1:150ms;  /* exits and small moves */
+  --t-2:220ms;  /* veils and fades */
+  --t-3:320ms;  /* in-place swaps */
+  --t-4:420ms;  /* entrances that travel */
   /* one family for the whole page — headings included */
   --font:'Host Grotesk','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
@@ -31,10 +171,11 @@ body{
 }
 img{display:block;max-width:100%;}
 a{color:inherit;text-decoration:none;}
-button,input{font:inherit;color:inherit;}
+button,input,select,textarea{font:inherit;color:inherit;}
 button{background:none;border:0;cursor:pointer;}
 ::selection{background:var(--red);color:#fff;}
-
-.wrap{max-width:calc(var(--maxw) + var(--pad)*2);margin:0 auto;padding-inline:var(--pad);}
-.sec{padding-block:clamp(72px,9vw,132px);}
-.sec-tight{padding-block:clamp(56px,6vw,84px);}
+/* `hidden` has to win. The UA rule is [hidden]{display:none}, which loses to any
+   author rule that sets a display — so a filtered-out row or a parked block with
+   `display:flex` on its class stayed on screen. Used by the FAQ and region
+   filters and by the parked audit strip. */
+[hidden]{display:none !important;}

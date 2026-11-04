@@ -1,0 +1,74 @@
+/* ==========================================================================
+   CHECKOUT
+   ==========================================================================
+   Nothing here invents a colour, a radius or a focus ring. The panel is the
+   same overlay shape as the auth card, the fields reuse .fld / .lbl / .hint /
+   .err wholesale, and the button is .btn-red — so the contrast and target-size
+   work already proved for those carries over instead of being re-litigated. */
+.co{position:fixed;inset:0;z-index:310;overflow:auto;opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s;}
+.co.is-open{opacity:1;visibility:visible;transition:opacity .3s var(--ease),visibility 0s 0s;}
+.co-scrim{position:fixed;inset:0;background:rgba(8,11,14,.62);}
+.co-card{
+  position:relative;margin:min(6vh,54px) auto;max-width:560px;width:calc(100% - 28px);
+  background:var(--card);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);
+  transform:translateY(14px);transition:transform .4s var(--ease);
+}
+.co.is-open .co-card{transform:none;}
+.co-body{padding:var(--pad-3);}
+.co-x{
+  position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;
+  display:grid;place-items:center;color:var(--body);background:var(--paper);
+}
+.co-x:hover{background:var(--paper-2);color:var(--ink);}
+.co-x svg{width:18px;height:18px;}
+#co-title{font-size:var(--fs-h4);letter-spacing:-.02em;padding-right:44px;}
+.co-sub{margin-top:8px;color:var(--body);font-size:var(--fs-300);}
+
+.co-sum{margin-top:24px;padding:20px;border-radius:var(--r-lg);background:var(--paper);border:1px solid var(--line-2);}
+.co-sum h3{font-size:var(--fs-100);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.co-rows{margin-top:14px;display:flex;flex-direction:column;gap:var(--space-2);}
+.co-row{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-4);font-size:var(--fs-300);}
+.co-row dt{color:var(--body);}
+.co-row dd{color:var(--ink);font-weight:600;text-align:right;}
+.co-row--total{margin-top:5px;padding-top:12px;border-top:1px solid var(--line);}
+.co-row--total dt{color:var(--ink);font-weight:600;}
+.co-row--total strong{font-size:20px;letter-spacing:-.02em;}
+/* a link-looking control still has to clear the 24px floor (2.5.8) */
+.co-change{margin-top:14px;min-height:24px;padding:4px 0;font-size:var(--fs-200);font-weight:600;color:var(--red-text);text-decoration:underline;text-underline-offset:3px;}
+
+.co-renew{margin-top:16px;padding:14px 16px;border-radius:var(--r-md);background:var(--paper-2);color:var(--body);font-size:var(--fs-200);line-height:1.6;}
+.co-renew strong,.co-renew b{color:var(--ink);}
+
+.co-form{margin-top:22px;display:flex;flex-direction:column;gap:var(--space-4);}
+.co-pay{border:0;}
+.co-pay legend{font-size:var(--fs-200);font-weight:600;color:var(--ink);margin-bottom:10px;}
+.co-methods{display:flex;flex-direction:column;gap:var(--space-2);}
+.co-method{display:block;cursor:pointer;}
+.co-method input{position:absolute;opacity:0;width:0;height:0;}
+.co-method-b{
+  display:flex;flex-direction:column;gap:2px;min-height:56px;justify-content:center;
+  padding:12px 16px;border-radius:var(--r-md);border:1px solid var(--line-ui);
+  transition:border-color .2s,background .2s,box-shadow .2s;
+}
+.co-method-n{font-size:var(--fs-300);font-weight:600;color:var(--ink);}
+.co-method-d{font-size:var(--fs-200);color:var(--muted);}
+.co-method input:checked + .co-method-b{border-color:var(--ink);background:var(--paper);box-shadow:inset 0 0 0 1px var(--ink);}
+/* the ring goes on the box, because the real radio is visually hidden */
+.co-method input:focus-visible + .co-method-b{outline:var(--focus-w) solid var(--focus);outline-offset:var(--focus-gap);}
+
+.co-pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);}
+.co-offsite{padding:13px 16px;border-radius:var(--r-md);background:var(--paper);color:var(--body);font-size:var(--fs-200);line-height:1.6;}
+.co-submit{width:100%;justify-content:center;margin-top:4px;}
+.co-secure{display:flex;align-items:center;justify-content:center;gap:var(--space-2);color:var(--muted);font-size:var(--fs-100);}
+.co-secure svg{width:14px;height:14px;flex:0 0 auto;}
+
+.co-done{text-align:center;padding:22px 0 6px;}
+.co-done-ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;background:#E9F9F0;color:var(--green-text);}
+.co-done-ic svg{width:26px;height:26px;}
+#co-done-title{font-size:var(--fs-h5);letter-spacing:-.02em;}
+#co-done-body{margin-top:10px;color:var(--body);font-size:var(--fs-300);line-height:1.6;}
+#co-done-go{margin-top:22px;}
+@media(max-width:560px){
+  .co-card{margin:0;width:100%;min-height:100%;border-radius:0;}
+  .co-pair{grid-template-columns:1fr;}
+}

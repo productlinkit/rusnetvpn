@@ -2,15 +2,12 @@
    BUTTONS
    ========================================================================== */
 .btn{
-  display:inline-flex;align-items:center;gap:10px;
+  display:inline-flex;align-items:center;gap:var(--space-3);
   padding:15px 18px 15px 26px;border-radius:999px;
-  font-size:15px;font-weight:600;line-height:1;white-space:nowrap;
+  font-size:var(--fs-400);font-weight:600;line-height:1;white-space:nowrap;
   transition:transform .45s var(--ease),box-shadow .45s var(--ease),background .3s;
   will-change:transform;
 }
-/* a request is in flight: the button stays where it is and stops accepting a
-   second click, rather than moving or swapping for a spinner */
-.btn[disabled]{opacity:.55;pointer-events:none;}
 .btn .arw{
   width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
   transition:transform .5s var(--ease);
@@ -20,17 +17,37 @@
 .btn-primary{background:var(--ink);color:#fff;box-shadow:0 18px 34px -20px rgba(14,18,22,.7);}
 .btn-primary .arw{background:var(--red);color:#fff;}
 .btn-primary:hover{box-shadow:0 26px 44px -20px rgba(14,18,22,.7);}
-.btn-red{background:linear-gradient(180deg,var(--red-2),var(--red));color:#fff;box-shadow:0 20px 40px -20px rgba(225,39,48,.65),inset 0 1px 0 rgba(255,255,255,.25);}
+.btn-red{background:linear-gradient(180deg,var(--red-fill-2),var(--red-fill));color:#fff;box-shadow:0 20px 40px -20px rgba(225,39,48,.65),inset 0 1px 0 rgba(255,255,255,.25);}
 .btn-red .arw{background:rgba(255,255,255,.2);color:#fff;}
-.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line-3);padding:15px 24px;}
-.btn-ghost:hover{background:#fff;border-color:transparent;box-shadow:var(--shadow-sm);}
+/* the border is the only thing drawing this button, so it is the one that has to
+   clear 3:1 (1.4.11). --line-3 measured 1.41:1 — a hairline you could see only
+   if you already knew it was there. */
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line-ui);padding:15px 24px;}
+.btn-ghost:hover{background:#fff;border-color:var(--ink);box-shadow:var(--shadow-sm);}
 .btn-white{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
 .btn-white .arw{background:var(--red);color:#fff;}
-.btn-sm{padding:11px 13px 11px 20px;font-size:14px;}
+.btn-sm{padding:12px 14px 12px 20px;font-size:var(--fs-300);min-height:40px;}
 .btn-sm .arw{width:26px;height:26px;}
+/* 2.5.8: every button clears 24px by a wide margin and the full-size ones reach
+   the 44px comfort target */
+.btn{min-height:44px;}
 
-.link-u{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;border-bottom:1px solid var(--line-3);padding-bottom:3px;transition:gap .3s var(--ease),border-color .3s;}
-.link-u:hover{gap:13px;border-color:var(--red);}
+/* ---------- pending state ----------
+   A submit button that has been pressed says so, stays pressed-looking, and
+   stops accepting a second press. aria-busy on the form carries the same fact
+   to a screen reader, so the spinner is not the only channel. */
+.btn.is-busy{pointer-events:none;opacity:.85;}
+.btn.is-busy .arw{display:none;}
+.btn .spin{
+  display:none;width:17px;height:17px;flex:0 0 auto;border-radius:50%;
+  border:2px solid currentColor;border-right-color:transparent;
+  animation:spin .7s linear infinite;
+}
+.btn.is-busy .spin{display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.link-u{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--fs-300);font-weight:600;border-bottom:1px solid var(--line-ui);padding-bottom:3px;transition:gap .3s var(--ease),border-color .3s;}
+.link-u:hover{gap:var(--space-3);border-color:var(--red);}
 
 /* ==========================================================================
    IMAGE FRAME + PLACEHOLDER
@@ -38,11 +55,21 @@
 .media{position:relative;overflow:hidden;background:var(--paper-2);}
 .media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
 .media .ph{
-  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);
   background:
     repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 2px,transparent 2px 12px),
     linear-gradient(150deg,#E7E9EC 0%,#DFE3E7 42%,#E9E4E1 100%);
-  color:#9AA3AD;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:16px;
+  /* #9AA3AD measured 2.10:1 on this element's own gradient — the caption failed
+     against the very box it sits in, before any photo was involved. */
+  color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:16px;
 }
 .media .ph svg{width:26px;height:26px;opacity:.55;}
-.media .ph b{font-weight:600;text-transform:none;letter-spacing:0;font-size:11.5px;opacity:.85;}
+.media .ph b{font-weight:600;text-transform:none;letter-spacing:0;font-size:11.5px;}
+/* Scaffolding gets out of the way once the real asset arrives. Without this the
+   placeholder kept painting "1600 × 1100" over a photo that had already
+   decoded, which is also what dropped its caption onto a sky-blue backdrop. */
+.media.has-img .ph{display:none;}
+
+/* a request is in flight: the button stays where it is and stops accepting a
+   second click, rather than moving or swapping for a spinner */
+.btn[disabled]{opacity:.55;pointer-events:none;}

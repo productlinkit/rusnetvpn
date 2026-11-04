@@ -1,0 +1,402 @@
+/* ==========================================================================
+   REDUCED MOTION
+   ==========================================================================
+   The old block zeroed durations, which stops things moving but leaves three
+   gaps: the marquee still loops (an infinite animation with a 0s duration just
+   loops faster), `scroll-behavior:smooth` still animates every jump link, and
+   the cursor-following preview still chases the pointer. All three are handled
+   here; the JS side reads the same query and skips its own animations. */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    /* Delays survived the old reset, and a zeroed duration behind a live delay
+       is not stillness — it is the same wait with nothing to look at during it.
+       The lead/follow offsets in the dialog and the .12s holds on the rail
+       cards would have left elements blank for their delay and then popped. */
+    animation-delay:0s !important;
+    transition-delay:0s !important;
+    scroll-behavior:auto !important;
+  }
+  .up{opacity:1;transform:none;}
+  /* these three exist only as motion, so they stop rather than flicker */
+  .marq .track{animation:none;transform:none;}
+  .conn .bars i{animation:none;height:60%;}
+  .conn .pulse{animation:none;}
+  #peek{display:none;}
+  /* transform-based hover flourishes read as jitter when the transition is gone */
+  .fcol a:hover,.auth-google:hover,.store:hover{transform:none;}
+}
+
+/* ==========================================================================
+   FORCED COLORS (Windows High Contrast)
+   ==========================================================================
+   In forced-colors mode the OS replaces the palette wholesale, and anything
+   whose shape came from a background colour rather than a border loses its
+   edge — the buttons, the FAQ rows and the payment-method tiles all flatten
+   into the page. A border in ButtonText restores the boundary the fill was
+   drawing, and the focus ring is re-stated in Highlight because the authored
+   ring colour is one of the things the OS discards. */
+@media (forced-colors: active){
+  .btn, .qitem, .chip, input, select, textarea, .co-method-b{ border:1px solid ButtonText; }
+  :focus-visible{ outline:3px solid Highlight; outline-offset:3px; }
+}
+
+/* ==========================================================================
+   DIALOGS — one overlay system for confirm / error / info
+   ==========================================================================
+   Built on <dialog> + showModal(), which is what gives us the focus trap, the
+   Escape key, the inert background and the return-focus-on-close behaviour that
+   a hand-rolled overlay has to reimplement and usually gets wrong.
+
+   Every dialog is the same object at three severities: same width, same radius,
+   same padding, same action row, same two ways out (the X and Escape, plus a
+   named cancel button). Nothing here is dismissed by clicking into space alone —
+   destructive confirms should cost a deliberate press. */
+.dlg{
+  width:min(460px,calc(100vw - 32px));
+  border:0;padding:0;border-radius:var(--r-lg);
+  background:var(--card);color:var(--ink);
+  box-shadow:var(--shadow-lg);
+  margin:auto;overflow:visible;
+}
+.dlg::backdrop{background:rgba(9,12,16,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+/* The panel and its backdrop used to run the same duration on the same curve
+   from the same frame, which is why the whole thing arrived as one flat plate:
+   nothing led, nothing followed, and there was no exit at all — close() pulled
+   the dialog out of the top layer and it vanished between two frames.
+
+   Now the room dims first and the panel follows it in. The veil is quick and
+   linear-ish because it is ground, not gesture; the panel starts 70ms later,
+   travels further, and lands on the seat curve. Leaving reverses the order and
+   takes about a third of the time: the panel goes first and the veil clears
+   after it, so what you last see is the page coming back rather than a hole
+   where the dialog was. Exits are short on purpose — a dismissal you have to
+   wait out is the single most expensive 200ms in an interface. */
+/* The lead comes from the two durations rather than from a delay on the panel,
+   and the panel fills `forwards` rather than `both`. That is a safety property,
+   not a style one: the backwards half of `both` pins an element at its keyframe
+   `from` until the animation starts, dlgIn starts at opacity 0, and an
+   animation that is created but left pending therefore leaves a modal that is
+   invisible while still holding the focus trap and the inert background — a
+   dialog you cannot see but cannot escape past. The same fault was caught on
+   the price, once in six runs. With `forwards` a pending animation falls back
+   to the element's own style, which is a dialog you can read.
+   The veil keeps `both` because its `from` is a transparent backdrop, so its
+   worst case is no dimming rather than no dialog. It still finishes in half the
+   panel's time, which is what makes the room read as darkening first. */
+.dlg[open]{animation:dlgIn var(--t-4) var(--ease-seat) forwards;}
+.dlg[open]::backdrop{animation:veilIn var(--t-2) var(--ease-enter) both;}
+/* No opacity on the panel, deliberately. A keyframe animation whose timeline
+   stalls keeps applying the frame it is parked on — measured on the price as
+   currentTime stuck at 0 for well over a second — and a panel parked on
+   opacity 0 is a modal you cannot see while it still holds the focus trap and
+   the inert background behind it. Animating transform alone means the worst
+   case is a dialog sitting 18px low at 97% scale: odd-looking, entirely
+   usable, and readable. The fade was never carrying the entrance anyway; the
+   veil and the travel are. */
+@keyframes dlgIn{from{transform:translateY(18px) scale(.966);}to{transform:none;}}
+@keyframes veilIn{from{opacity:0;}to{opacity:1;}}
+/* [open] is still set while this runs — the dialog does not leave the top layer
+   until the animation has finished — so these have to outrank the rules above
+   on specificity rather than on source order alone. */
+/* forwards on the way out too: these end at opacity 0 and need that held until
+   close() lands, but their `from` is the visible resting state, so there is
+   nothing backwards fill could usefully pin */
+.dlg[open].is-closing{animation:dlgOut var(--t-1) var(--ease-exit) forwards;}
+.dlg[open].is-closing::backdrop{animation:veilOut var(--t-2) var(--ease-exit) 40ms forwards;}
+@keyframes dlgOut{to{opacity:0;transform:translateY(10px) scale(.985);}}
+@keyframes veilOut{to{opacity:0;}}
+.dlg-inner{padding:var(--pad-2);}
+.dlg-top{display:flex;align-items:flex-start;gap:var(--space-4);}
+.dlg-ic{
+  width:44px;height:44px;border-radius:13px;flex:0 0 auto;
+  display:grid;place-items:center;background:var(--paper-2);color:var(--body);
+}
+.dlg-ic svg{width:20px;height:20px;}
+.dlg--danger .dlg-ic{background:var(--red-tint);color:var(--red-text);}
+.dlg--warn   .dlg-ic{background:var(--amber-tint);color:var(--amber-text);}
+.dlg--ok     .dlg-ic{background:var(--green-tint);color:var(--green-text);}
+.dlg h2{font-size:var(--fs-h5);line-height:1.2;}
+.dlg-body{margin-top:12px;font-size:var(--fs-300);color:var(--body);line-height:1.6;}
+.dlg-body b{color:var(--ink);}
+.dlg-x{
+  position:absolute;top:14px;right:14px;
+  width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+  color:var(--body);transition:background .25s,color .25s;
+}
+.dlg-x:hover{background:var(--paper);color:var(--ink);}
+.dlg-x svg{width:15px;height:15px;}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:24px;}
+.dlg-actions .btn{flex:1 1 auto;justify-content:center;}
+@media(max-width:420px){.dlg-actions{display:grid;}}
+/* the destructive choice is never the one your thumb lands on by default */
+.dlg-actions .btn-red{order:2;}
+.dlg-actions .btn-ghost{order:1;}
+
+/* ==========================================================================
+   TOASTS — transient, non-blocking, announced politely
+   ========================================================================== */
+.toasts{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  z-index:350;display:flex;flex-direction:column;gap:var(--space-2);align-items:center;
+  width:min(460px,calc(100vw - 32px));pointer-events:none;
+}
+.toast{
+  display:flex;align-items:flex-start;gap:var(--space-3);width:100%;
+  padding:14px 16px;border-radius:14px;
+  background:var(--ink);color:#fff;font-size:var(--fs-300);line-height:1.45;
+  box-shadow:var(--shadow-md);pointer-events:auto;
+  animation:toastIn .3s var(--ease) both;
+}
+.toast.out{animation:toastOut .25s var(--ease) both;}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px);}}
+.toast .ti{flex:0 0 auto;width:18px;height:18px;margin-top:1px;}
+.toast--bad .ti{color:#FF8E95;}
+.toast--ok  .ti{color:#5DE3A0;}
+.toast .tx{flex:1;}
+.toast .tclose{margin-left:6px;color:rgba(255,255,255,.75);width:24px;height:24px;display:grid;place-items:center;border-radius:50%;flex:0 0 auto;}
+.toast .tclose:hover{background:rgba(255,255,255,.14);color:#fff;}
+.toast .tclose svg{width:12px;height:12px;}
+.toasts{--focus:#FFFFFF;}
+
+/* ==========================================================================
+   FORM-LEVEL ALERT — WCAG 3.3.1
+   ==========================================================================
+   Per-field errors say what is wrong with a field. This says what is wrong with
+   the attempt: the server refused it, the network dropped, the card bounced.
+   It is a live region, so it is read out without moving focus. */
+.f-alert{
+  display:none;align-items:flex-start;gap:var(--space-3);
+  margin-top:18px;padding:13px 15px;border-radius:12px;
+  font-size:var(--fs-200);line-height:1.5;font-weight:500;
+  border:1px solid transparent;
+}
+.f-alert.on{display:flex;}
+.f-alert svg{width:17px;height:17px;flex:0 0 auto;margin-top:1px;}
+.f-alert--bad{background:#FFF4F4;border-color:rgba(190,26,35,.28);color:var(--red-text);}
+.f-alert--ok{background:var(--green-tint);border-color:rgba(8,112,64,.24);color:var(--green-text);}
+.f-alert--info{background:var(--blue-tint);border-color:rgba(18,53,110,.2);color:#12356E;}
+.f-alert b{font-weight:700;}
+/* a summary that lists what to fix, each entry jumping to its field */
+.f-alert ul{list-style:none;margin-top:6px;display:flex;flex-direction:column;gap:var(--space-1);}
+.f-alert li a{text-decoration:underline;text-underline-offset:2px;font-weight:600;min-height:24px;display:inline-flex;align-items:center;}
+
+/* ==========================================================================
+   TOOLTIP / GLOSSARY
+   ==========================================================================
+   A term you can ask about. It is a real <button> with aria-expanded and the
+   explanation lives in the DOM next to it, so it is reachable by keyboard and
+   readable by a screen reader — not a title attribute that only a mouse finds. */
+/* plain inline, not inline-flex. As a flex box the term and the "?" became two
+   items that could not share a line break with the sentence around them, so
+   "Dynamic switching, no slowdowns" wrapped with the chip stranded beside the
+   first line. Inline lets the whole thing reflow like the text it is part of. */
+.tip{display:inline;}
+.tip > span:first-child{margin-right:5px;}
+/* 24×24 exactly — 2.5.8's floor. An 18px chip looked tidier and was a target
+   most thumbs miss, and the inline exception is not worth leaning on when the
+   only cost is 6px. */
+.tip-btn{
+  display:inline-grid;place-items:center;
+  width:24px;height:24px;min-width:24px;border-radius:50%;flex:0 0 auto;
+  border:1px solid var(--line-ui);color:var(--body);
+  font-size:var(--fs-100);font-weight:700;line-height:1;
+  transition:background .25s,color .25s,border-color .25s;
+  vertical-align:-2px;
+}
+.tip-btn:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+/* position:fixed, not absolute, for two reasons. A visibility:hidden absolute
+   popup still takes part in layout, so a closed tooltip near the right edge of a
+   column pushed the document 127px wider than a 390px phone. And fixed lets JS
+   clamp it to the viewport, which is the only way a popup anchored to a word in
+   the middle of a sentence can be guaranteed to stay on screen. Coordinates come
+   from positionTip(); the arrow follows via --tip-arrow. */
+.tip-pop{
+  position:fixed;left:0;top:0;z-index:60;
+  width:min(280px,calc(100vw - 28px));padding:14px 15px;
+  background:var(--ink);color:#fff;border-radius:13px;
+  font-size:var(--fs-200);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;
+  box-shadow:var(--shadow-md);
+  opacity:0;visibility:hidden;transform:translateY(-5px);
+  transition:opacity .22s,transform .26s var(--ease),visibility 0s .22s;
+}
+.tip.on .tip-pop{opacity:1;visibility:visible;transform:none;transition:opacity .22s,transform .26s var(--ease),visibility 0s 0s;}
+.tip-pop::before{content:"";position:absolute;top:-5px;left:var(--tip-arrow,14px);width:10px;height:10px;background:var(--ink);transform:rotate(45deg);border-radius:2px;}
+.tip-pop.flip::before{top:auto;bottom:-5px;}
+.tip-pop b{color:#fff;}
+/* on dark panels the swatch flips so the chip does not disappear */
+.navyband .tip-btn,.apps .tip-btn,.trial .tip-btn{border-color:var(--line-ui-dark);color:rgba(255,255,255,.9);}
+.navyband .tip-btn:hover,.apps .tip-btn:hover,.trial .tip-btn:hover{background:#fff;color:var(--ink);border-color:#fff;}
+.navyband .tip-pop,.apps .tip-pop,.trial .tip-pop{background:#fff;color:var(--ink);}
+.navyband .tip-pop::before,.apps .tip-pop::before,.trial .tip-pop::before{background:#fff;}
+.navyband .tip-pop b,.apps .tip-pop b,.trial .tip-pop b{color:var(--ink);}
+
+/* ==========================================================================
+   SEARCH FIELD — shared by the FAQ and the server list
+   ========================================================================== */
+.srch{position:relative;display:flex;align-items:center;width:100%;max-width:400px;}
+.srch svg.mag{position:absolute;left:15px;width:16px;height:16px;color:var(--body);pointer-events:none;}
+.srch input{
+  width:100%;padding:13px 42px 13px 41px;
+  border-radius:999px;border:1px solid var(--line-ui);background:var(--card);
+  font-size:var(--fs-300);min-height:46px;
+  transition:border-color .25s,box-shadow .25s;
+}
+.srch input::placeholder{color:var(--muted);opacity:1;}
+.srch input:focus{border-color:var(--ink);}
+.srch .clr{
+  position:absolute;right:5px;width:36px;height:36px;border-radius:50%;
+  display:none;place-items:center;color:var(--body);
+}
+.srch .clr:hover{background:var(--paper-2);color:var(--ink);}
+.srch .clr svg{width:13px;height:13px;}
+.srch.has .clr{display:grid;}
+/* on the navy band the field has to invert or it vanishes */
+.navyband .srch input{background:rgba(255,255,255,.07);border-color:var(--line-ui-dark);color:#fff;}
+.navyband .srch input::placeholder{color:rgba(255,255,255,.66);}
+.navyband .srch input:focus{border-color:#fff;background:rgba(255,255,255,.12);}
+.navyband .srch svg.mag,.navyband .srch .clr{color:rgba(255,255,255,.8);}
+.navyband .srch .clr:hover{background:rgba(255,255,255,.16);color:#fff;}
+
+/* the count that follows a search — a live region, so filtering is announced
+   rather than silently rearranging the page under a screen-reader user */
+.srch-count{font-size:var(--fs-200);color:var(--muted);margin-top:10px;min-height:20px;}
+.navyband .srch-count{color:rgba(255,255,255,.74);}
+
+/* ==========================================================================
+   EMPTY / LOADING / ERROR STATES
+   ========================================================================== */
+.state{
+  display:none;flex-direction:column;align-items:center;text-align:center;gap:var(--space-3);
+  padding:var(--pad-4) 22px;
+}
+.state.on{display:flex;}
+.state .si{
+  width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+  background:var(--paper-2);color:var(--body);margin-bottom:4px;
+}
+.state .si svg{width:22px;height:22px;}
+.state h3{font-size:var(--fs-h5);}
+.state p{font-size:var(--fs-300);color:var(--body);max-width:44ch;line-height:1.6;}
+.state .btn{margin-top:8px;}
+.navyband .state .si{background:rgba(255,255,255,.1);color:#fff;}
+.navyband .state h3{color:#fff;}
+.navyband .state p{color:rgba(255,255,255,.74);}
+.state--bad .si{background:var(--red-tint);color:var(--red-text);}
+
+/* skeleton rows — a placeholder with the shape of the thing that is coming,
+   not a spinner over an empty box */
+.skel{display:none;flex-direction:column;}
+.skel.on{display:flex;}
+.skel-row{
+  display:flex;align-items:center;gap:var(--space-5);
+  padding:var(--pad-1) 6px;border-bottom:1px solid rgba(255,255,255,.13);
+}
+.skel-bar{
+  height:14px;border-radius:999px;
+  background:linear-gradient(90deg,rgba(255,255,255,.08) 25%,rgba(255,255,255,.18) 37%,rgba(255,255,255,.08) 63%);
+  background-size:400% 100%;animation:shim 1.5s ease-in-out infinite;
+}
+@keyframes shim{0%{background-position:100% 0;}100%{background-position:0 0;}}
+.skel-bar.w1{flex:1.4;}
+.skel-bar.w2{flex:.8;}
+.skel-bar.w3{flex:.7;}
+.skel-bar.dot{flex:0 0 40px;height:40px;border-radius:50%;}
+@media(prefers-reduced-motion:reduce){.skel-bar{animation:none;background:rgba(255,255,255,.13);}}
+
+/* ==========================================================================
+   SERVER LIST TOOLBAR
+   ========================================================================== */
+.srv-tools{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-5);flex-wrap:wrap;margin-bottom:22px;}
+/* the live latency readout can say more than one thing now */
+.rowi .lat b{color:#fff;}
+.rowi.is-busy .lat{color:rgba(255,255,255,.5);}
+
+/* ==========================================================================
+   CONNECTION WIDGET — connected / connecting / failed
+   ==========================================================================
+   The hero card only ever showed success. A privacy product that never draws a
+   failed handshake is hiding the one moment the user most needs a next step. */
+.conn .st.is-connecting{color:var(--amber-text);}
+.conn .st.is-error{color:var(--red-text);}
+.conn .pulse.amber{background:var(--amber);box-shadow:0 0 0 0 rgba(247,144,9,.6);}
+.conn .pulse.red{background:var(--red);box-shadow:none;animation:none;}
+.conn .conn-act{
+  display:none;width:100%;margin-top:12px;justify-content:center;
+  padding:10px 16px;border-radius:11px;border:1px solid var(--line-ui);
+  font-size:var(--fs-200);font-weight:600;min-height:40px;align-items:center;gap:var(--space-2);
+}
+.conn.is-error .conn-act{display:inline-flex;}
+.conn.is-error .bars{opacity:.3;}
+.conn .conn-act svg{width:14px;height:14px;}
+.conn .conn-act:hover{background:var(--paper);border-color:var(--ink);}
+
+/* The AUDIT / PROOF STRIP rules lived here. Removed with the card itself: a
+   stylesheet that still dresses a component nobody renders is an invitation to
+   render it. The honest status now lives at #audit-status. */
+
+/* ==========================================================================
+   ICONOGRAPHY — one weight, measured at the screen
+   ==========================================================================
+   Every icon already carried stroke-width="1.8", which looked like a unified
+   set and was not one. stroke-width is expressed in viewBox units, so the
+   thickness that actually reaches the screen is the attribute times
+   (rendered size / viewBox size). The set mixes 16-unit and 24-unit artboards
+   at sizes from 11px to 29px, and measuring what was drawn found sixteen
+   distinct weights from 1.05px to 2.07px — a 1.97x spread. The 16-unit icons
+   drew almost twice as heavy as the 24-unit ones sitting beside them.
+
+   vector-effect:non-scaling-stroke takes the viewBox transform out of the
+   stroke, so the number below is the number of pixels drawn, at every size and
+   on both artboards. 1.45 because that is where most of the set already sat —
+   the correction moves the outliers, not the whole page.
+
+   Targets svg[stroke-width] only, so filled marks like the wordmark and the
+   store badges, which have no stroke, are untouched. */
+svg[stroke-width]{ stroke-width:1.45; }
+svg[stroke-width] *{ vector-effect:non-scaling-stroke; }
+
+/* ==========================================================================
+   PLAN COMPARISON
+   ==========================================================================
+   The segmented switcher shows one plan at a time, which is fine for picking but
+   useless for comparing — the saving only exists relative to the plan you are
+   not looking at. This puts all five side by side with a per-month equivalent,
+   which is the number that actually makes the choice. */
+/* Both are full-width rows of .price-grid rather than siblings of it, so the
+   stacked order on tablet and phone can interleave them with the two cards.
+   The grid's own 14px gap does part of the spacing the margins used to do. */
+.cmp-toggle{grid-column:1/-1;display:flex;justify-content:center;margin-top:clamp(6px,1.3vw,16px);}
+.cmp{
+  grid-column:1/-1;
+  display:none;margin-top:4px;
+  border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--card);
+  overflow:hidden;
+}
+.cmp.on{display:block;}
+.cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.cmp table{width:100%;border-collapse:collapse;font-size:var(--fs-300);min-width:520px;}
+.cmp th,.cmp td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--line-2);}
+.cmp thead th{
+  font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;background:var(--paper);
+  position:sticky;top:0;
+}
+.cmp tbody tr:last-child td{border-bottom:0;}
+.cmp tbody tr.is-best{background:var(--green-tint);}
+.cmp .plan{font-weight:700;}
+.cmp .mo{font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;}
+.cmp .tot{font-variant-numeric:tabular-nums;color:var(--body);}
+.cmp .sv{font-weight:700;color:var(--green-text);font-variant-numeric:tabular-nums;}
+.cmp .sv.none{color:var(--muted);font-weight:500;}
+.cmp .pick{white-space:nowrap;}
+.cmp .pick .btn{padding:9px 16px;font-size:var(--fs-200);min-height:40px;}
+.cmp caption{
+  caption-side:top;text-align:left;padding:16px 18px 4px;
+  font-size:var(--fs-200);color:var(--muted);line-height:1.5;
+}
+@media(max-width:560px){.cmp th,.cmp td{padding:13px 14px;}}
