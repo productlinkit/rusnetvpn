@@ -4,6 +4,11 @@ import { useSession } from '../state/session'
 
 /* ==========================================================================
    FOOTER
+
+   Column titles are <h3>, not <h4>: they sit under the page's h2 sections, and
+   skipping a level made the outline read as if a heading were missing. The
+   type and the measure for every column — the address included — come from
+   the stylesheet, so no column is on its own set of numbers.
    ========================================================================== */
 
 const PRODUCT = [
@@ -15,7 +20,7 @@ const PRODUCT = [
 ]
 
 export default function Footer() {
-  const { openAuth } = useSession()
+  const { user, openAuth, openAccount } = useSession()
 
   return (
     <footer className="wrap">
@@ -25,29 +30,39 @@ export default function Footer() {
             <BrandMark />
           </a>
           <p>
-            A secure and independent VPN solution, fully controlled from Moscow. RusVPN is the best guaranteed
-            no-log VPN built from ground up locally in Russia.
+            A secure and independent VPN solution, fully controlled from Moscow. RusVPN is a privacy-focused VPN
+            with a strict no-logs policy, built from the ground up locally in Russia.
           </p>
         </div>
 
         <div className="fcol">
-          <h4>Product</h4>
+          <h3>Product</h3>
           {PRODUCT.map(([href, label]) => (
             <a key={href} href={href}>{label}</a>
           ))}
         </div>
 
         <div className="fcol">
-          <h4>Customer service</h4>
+          <h3>Customer service</h3>
+          {/* The audit status, usability research and accessibility links are
+              out while the transparency band is hidden: a footer link that
+              scrolls to a display:none section just does nothing. Restore them
+              here — #audit-status, #ux-research, #accessibility — when the band
+              comes back. */}
           <a href="#faq">FAQ</a>
-          <a href="#faq">Send a Message</a>
+          <a href="#faq" data-fab-open="">Send a Message</a>
           <a href="#faq">WhatsApp</a>
           <a href="#faq">Telegram</a>
           <a
             href="#sign-in"
+            data-auth="in"
             onClick={(e) => {
               e.preventDefault()
-              openAuth('in')
+              /* this link stays visible once you are signed in, unlike the nav's
+                 Login — and it used to open the login panel for someone who was
+                 already logged in. Send them where they were asking to go. */
+              if (user) openAccount('overview')
+              else openAuth('in')
             }}
           >
             My Account
@@ -55,8 +70,8 @@ export default function Footer() {
         </div>
 
         <div className="fcol">
-          <h4>Address</h4>
-          <p style={{ fontSize: '14.5px', color: 'var(--body)', lineHeight: 1.6, maxWidth: 260 }}>
+          <h3>Address</h3>
+          <p>
             Office Space in Presnenskaya emb., 12. MIBC Moscow City, Federation Tower East, 123112, Moscow,
             Russia
           </p>

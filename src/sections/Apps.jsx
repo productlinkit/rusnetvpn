@@ -3,9 +3,15 @@ import StoreBadges from '../components/StoreBadges'
 import { Check } from '../components/icons'
 import { APP_TABS, PROS_CONS, SHOT } from '../data/content'
 import { usePrefetch } from '../hooks'
+import { tablistKeys } from '../shared/a11y'
 
 /* ==========================================================================
    APPS
+
+   Both chip rows are tablists: one tab stop each, arrows between the chips,
+   the selected one stated. The component owns aria-selected and the roving
+   tabIndex; tablistKeys owns the keys and clicks the real button, so a key
+   press and a click are the same code path.
    ========================================================================== */
 
 const ALL_SHOTS = Object.values(SHOT)
@@ -31,19 +37,31 @@ function Phones({ tab }) {
   const style = { opacity: fade ? 0 : 1, transition: 'opacity .45s' }
 
   return (
-    <div className="phones">
+    <div className="phones" id="phones">
       <div className="phone p-side">
-        <img src={SHOT[shown.l]} alt="RusVPN app screen" style={style} width="440" height="953" decoding="async" />
+        <img id="ph-l" src={SHOT[shown.l]} alt="RusVPN app screen" style={style} width="440" height="953" decoding="async" />
       </div>
       <div className="phone p-main">
-        <img src={SHOT[shown.m]} alt="RusVPN connected screen" style={style} width="440" height="953" decoding="async" />
+        <img id="ph-m" src={SHOT[shown.m]} alt="RusVPN connected screen" style={style} width="440" height="953" decoding="async" />
       </div>
       <div className="phone p-side">
-        <img src={SHOT[shown.r]} alt="RusVPN app screen" style={style} width="440" height="953" decoding="async" />
+        <img id="ph-r" src={SHOT[shown.r]} alt="RusVPN app screen" style={style} width="440" height="953" decoding="async" />
       </div>
     </div>
   )
 }
+
+/** the role/aria/tabIndex a tab needs, in one place for both rows */
+const tabProps = (prefix, panel, i, selected, select) => ({
+  type: 'button',
+  role: 'tab',
+  id: `${prefix}-${i}`,
+  'aria-selected': i === selected,
+  'aria-controls': panel,
+  tabIndex: i === selected ? 0 : -1,
+  className: i === selected ? 'on' : undefined,
+  onClick: () => select(i),
+})
 
 export default function Apps() {
   const [tab, setTab] = useState(0)
@@ -51,7 +69,10 @@ export default function Apps() {
   usePrefetch(ALL_SHOTS)
 
   return (
-    <section className="wrap" id="apps" style={{ paddingBlock: 'clamp(72px,9vw,132px)' }}>
+    /* .sec, not the same clamp written inline: an inline padding is not
+       reachable by the phone trim, so this section kept its 72px desktop
+       rhythm on a 390px screen while every section around it had come down */
+    <section className="sec wrap" id="apps">
       <div className="apps up">
         <div className="apps-grid">
           <div>
@@ -64,22 +85,28 @@ export default function Apps() {
               and security.
             </p>
 
-            <div className="tabs" style={{ marginTop: 26 }}>
+            <div className="tabs" id="apptabs" role="tablist" aria-label="App feature" style={{ marginTop: 26 }} onKeyDown={tablistKeys}>
               {APP_TABS.map((t, i) => (
-                <button key={t.label} className={i === tab ? 'on' : undefined} onClick={() => setTab(i)}>
+                <button key={t.label} {...tabProps('apptab', 'appcopy', i, tab, setTab)}>
                   {t.label}
                 </button>
               ))}
             </div>
 
-            <ul className="applist">
-              {APP_TABS[tab].copy.map((line) => (
-                <li key={line}>
-                  <span className="tick"><Check /></span>
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
+            {/* The tabpanel is the wrapper, not the <ul>. role="tabpanel" on a
+                list overrides its implicit role="list", which orphans every
+                <li>. tabIndex 0 because the panel holds nothing focusable, so
+                the APG pattern makes the panel itself the tab stop. */}
+            <div id="appcopy" role="tabpanel" aria-labelledby={`apptab-${tab}`} tabIndex={0}>
+              <ul className="applist">
+                {APP_TABS[tab].copy.map((line) => (
+                  <li key={line}>
+                    <span className="tick"><Check /></span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             <StoreBadges />
           </div>
@@ -91,26 +118,26 @@ export default function Apps() {
         <div className="pc">
           <div className="pc-head">
             <h3>See Pros &amp; Cons</h3>
-            <div className="tabs">
+            <div className="tabs" id="pctabs" role="tablist" aria-label="Download method" onKeyDown={tablistKeys}>
               {PROS_CONS.map((p, i) => (
-                <button key={p.label} className={i === pc ? 'on' : undefined} onClick={() => setPc(i)}>
+                <button key={p.label} {...tabProps('pctab', 'pc-panel', i, pc, setPc)}>
                   {p.label}
                 </button>
               ))}
             </div>
           </div>
-          <div className="pc-grid">
+          <div className="pc-grid" id="pc-panel" role="tabpanel" aria-labelledby={`pctab-${pc}`}>
             <div className="pc-col pro">
-              <h4>Pros</h4>
-              <ul>
+              <h4 id="pc-pro-h">Pros</h4>
+              <ul id="pc-pro" aria-labelledby="pc-pro-h">
                 {PROS_CONS[pc].pro.map((x) => (
                   <li key={x}><i /><span>{x}</span></li>
                 ))}
               </ul>
             </div>
             <div className="pc-col con">
-              <h4>Cons</h4>
-              <ul>
+              <h4 id="pc-con-h">Cons</h4>
+              <ul id="pc-con" aria-labelledby="pc-con-h">
                 {PROS_CONS[pc].con.map((x) => (
                   <li key={x}><i /><span>{x}</span></li>
                 ))}

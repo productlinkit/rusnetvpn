@@ -1,107 +1,10 @@
 /* ==========================================================================
    CONTENT
 
-   Every repeated block on the page — rail cards, feature tiles, region rows,
-   app tabs, plans, questions — lives here as data. The components below stay
-   markup; the copy stays editable without reading a single line of JSX.
+   Repeated blocks the API does not provide — app tabs, pros and cons, region
+   groups, payment methods, the glossary — live here as data. The components
+   stay markup; the copy stays editable without reading a line of JSX.
    ========================================================================== */
-
-/* ---------- why: the expanding rail ---------- */
-export const RAIL = [
-  {
-    img: '/images/tier-guest.jpg',
-    alt: 'RusVPN app connected to an optimized streaming server',
-    title: 'Best Streaming Experience',
-    body: 'We have optimized streaming servers around the globe, allowing you to get the most from your existing streaming subscription.',
-    pill: 'Optimized streaming servers',
-  },
-  {
-    img: '/images/tier-free.jpg',
-    alt: 'RusVPN app screen showing the no-logs policy',
-    title: 'Strict No-Logs Policy',
-    body: 'RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.',
-    pill: 'Independently audited',
-  },
-  {
-    img: '/images/tier-paid.jpg',
-    alt: 'RusVPN server list, run on locally owned servers',
-    title: '100% Independent Local Provider Server',
-    body: 'RusVPN is run and owned by local people that care about internet privacy and security in Russia. No shadowy megacorporation abroad involvement.',
-    pill: 'Owned and operated in-house',
-  },
-  {
-    img: '/images/tier-trial.jpg',
-    alt: 'RusVPN app browsing content without restrictions',
-    title: 'Zero Restrictions, Unlimited Content',
-    body: 'With thousands of servers in 90+ countries, you can easily access all of your favorite content – shows, music, apps, and more – regardless of where you live.',
-    pill: '90+ countries',
-  },
-]
-
-/* ---------- tech: the bento grid ----------
-   `viz` draws the bar chart, `geo` the continent strip. A tile has at most
-   one of them; most have neither. */
-export const TILES = [
-  {
-    wide: true,
-    icon: 'shieldCheck',
-    title: 'DNS Leak Protection',
-    body: 'Protect your privacy by ensuring your DNS isn’t being leaked to any entity.',
-    more: 'Experience advanced security, blazing-fast speed, and unrestricted access with our VPN.',
-    viz: [34, 58, 41, 76, 52, 88, 63, 96, 71, 45, 82, 56],
-  },
-  {
-    icon: 'split',
-    title: 'VPN Split Tunnel',
-    body: 'Select the apps for which you want to route through our secure VPN.',
-    more: 'With thousands of servers in 90+ countries, you can easily access all of your favorite content – shows, music, apps, and more – regardless of where you live.',
-  },
-  {
-    icon: 'power',
-    title: 'No-Log VPN',
-    body: 'We are a no-log VPN meaning that we don’t store any of your traffic logs.',
-    more: 'RusVPN is one of the first independently audited no-log VPN providers in the industry. We do no data collection, no logging of activity, and no sharing or selling any of your data ever.',
-  },
-  {
-    icon: 'bolt',
-    title: 'VPN Protocols',
-    body: 'We offer the most advanced VPN protocols for the fastest and most secure connection.',
-    more: 'RusVPN is the best guaranteed no-log VPN built from ground up locally in Russia.',
-  },
-  {
-    icon: 'racks',
-    title: 'Russian Reliability',
-    body: 'Owned and operated in-house, following strict Russian security standards.',
-    more: 'RusVPN is run and owned by local people that care about internet privacy and security in Russia. No shadowy megacorporation abroad involvement.',
-  },
-  {
-    wide: true,
-    icon: 'globe',
-    title: 'Global Coverage',
-    body: '700+ servers across 90+ countries on six continents, so there is always one close to you.',
-    more: 'Pick a country and we place you on the healthiest machine inside it. Automatic switching keeps a busy node from ever becoming your problem.',
-    geo: ['North America', 'South America', 'Europe', 'Asia', 'Africa', 'Oceania'],
-  },
-  {
-    icon: 'shieldPlus',
-    title: 'Unmatched Privacy',
-    body: 'No third-party access. All data is securely managed from Moscow, free from Western interference.',
-    more: 'Secure your online privacy with a VPN that respects your values and protects you from prying eyes as you browse.',
-  },
-  {
-    icon: 'boltLines',
-    title: 'Superior Performance',
-    body: 'Advanced hardware ensures fast speeds and smooth streaming.',
-    more: 'We have optimized streaming servers around the globe, allowing you to get the most from your existing streaming subscription.',
-  },
-  {
-    wide: true,
-    icon: 'stack',
-    title: 'Dynamic Switching',
-    body: 'Automatic server switching prevents slowdowns for uninterrupted service.',
-    more: '700+ servers worldwide, spanning North America, South America, Europe, Asia, Africa, and Oceania.',
-  },
-]
 
 /* ---------- apps: phone screenshots ---------- */
 export const SHOT = {
@@ -124,8 +27,8 @@ export const APP_TABS = [
     m: 'connected', l: 'tooltip', r: 'freehome',
     copy: [
       'We are a no-log VPN meaning that we don’t store any of your traffic logs.',
-      'RusVPN is one of the first independently audited no-log VPN providers in the industry.',
-      'No third-party access. All data is securely managed from Moscow, free from Western interference.',
+      'RusVPN is committed to independent, no-log auditing — that audit is in progress.',
+      'No third-party access to your VPN traffic. All data is securely managed from Moscow, free from Western interference.',
     ],
   },
   {
@@ -179,6 +82,87 @@ export const PROS_CONS = [
     con: ['Only for Mac devices'],
   },
 ]
+
+/* ---------- servers: the six region rows ----------
+   GET /servers/locations is per country — the list the app's server picker
+   shows. The section reads it a level up, as continents, because six rows is
+   a coverage claim you can take in at a glance and ninety is a phone book.
+
+   The API carries no continent, so the grouping is here: ISO 3166 alpha-2
+   codes per region (the Middle East and the Caucasus count as Asia, which is
+   where a buyer looks for them). Every count on the row is still summed from
+   the response; this table only says which row a country belongs on. A
+   country missing from it is not dropped — it lands on a trailing "Other
+   locations" row, so a new location the CMS adds next week is counted rather
+   than silently lost. Oceania has no photo yet, so it gets no hover preview. */
+export const REGIONS = [
+  {
+    key: 'europe', name: 'Europe', photo: '/images/region-europe.jpg',
+    codes: 'ad al at ba be bg by ch cy cz de dk ee es fi fo fr gb gg gi gr hr hu ie im is it je li lt lu lv mc md me mk mt nl no pl pt ro rs ru se si sk sm ua va xk',
+  },
+  {
+    key: 'namerica', name: 'North America', photo: '/images/region-namerica.jpg',
+    codes: 'ag ai aw bb bm bs bz ca cr cu cw dm do gd gl gt hn ht jm kn ky lc mq mx ni pa pr sv tc tt us vc vg vi',
+  },
+  {
+    key: 'asia', name: 'Asia', photo: '/images/region-apac.jpg',
+    codes: 'ae af am az bd bh bn bt cn ge hk id il in iq ir jo jp kg kh kr kw kz la lb lk mm mn mo mv my np om ph pk ps qa sa sg sy th tj tl tm tr tw uz vn ye',
+  },
+  {
+    key: 'samerica', name: 'South America', photo: '/images/region-latam.jpg',
+    codes: 'ar bo br cl co ec fk gf gy pe py sr uy ve',
+  },
+  {
+    key: 'africa', name: 'Africa', photo: '/images/region-mea.jpg',
+    codes: 'ao bf bi bj bw cd cf cg ci cm cv dj dz eg er et ga gh gm gn gq gw ke km lr ls ly ma mg ml mr mu mw mz na ne ng re rw sc sd sl sn so ss st sz td tg tn tz ug za zm zw',
+  },
+  {
+    key: 'oceania', name: 'Oceania', photo: null,
+    codes: 'as au ck fj fm gu ki mh mp nc nr nu nz pf pg pw sb to tv vu wf ws',
+  },
+]
+
+/* ---------- pricing: payment marks ----------
+   The four methods the site actually takes, the same four the checkout and
+   the FAQ name. `aria` is the accessible name of the mark itself; the visible
+   label beside it stays the short form people scan for. */
+export const PAY_METHODS = [
+  { key: 'card', label: 'Visa / Mastercard', aria: 'Visa and Mastercard' },
+  { key: 'paypal', label: 'PayPal', aria: 'PayPal' },
+  { key: 'apple', label: 'Apple Pay', aria: 'Apple Pay' },
+  { key: 'google', label: 'Google Pay', aria: 'Google Pay' },
+]
+
+/* ---------- pricing: the glossary behind the "?" chips ----------
+   A plan's feature lines come from GET /plans as keys; the explanation of a
+   term is not something the API carries, so it lives here, keyed by the same
+   feature key. A feature with an entry gets a "?" beside it, one without reads
+   as plain text — so the backend adding a feature never breaks the card, it
+   just arrives without a tooltip until someone writes one.
+
+   `renew` is the billing term in the fine print rather than a feature line. */
+export const GLOSSARY = {
+  'plans.features.noLogs': {
+    lead: 'No record is kept of what you do.',
+    body: 'No connection times, no traffic, no DNS queries. Servers run from RAM, so a machine that powers down keeps nothing.',
+  },
+  'plans.features.dnsLeakProtection': {
+    lead: 'Stops your browsing escaping the tunnel.',
+    body: 'Without it the name lookups your device makes can still travel to your provider, which reveals every site you visit even while the VPN is on.',
+  },
+  'plans.features.splitTunneling': {
+    lead: 'Choose what goes through the VPN.',
+    body: 'Route your browser through RusVPN while your banking app or local printer keeps using the normal connection.',
+  },
+  'plans.features.dynamicSwitching': {
+    lead: 'Moves you off a busy machine automatically.',
+    body: 'If the server you are on gets crowded, the app hands you to a healthier one in the same country without dropping the session.',
+  },
+  renew: {
+    lead: 'Your plan continues at the same price until you stop it.',
+    body: 'We charge the card on file on the renewal date. Turning it off keeps your access to the end of the period you already paid for — it is not a cancellation of the current term.',
+  },
+}
 
 /* ---------- nav ---------- */
 export const NAV_LINKS = [

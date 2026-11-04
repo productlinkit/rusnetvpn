@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Arw } from '../ui'
 import { Download } from '../icons'
-import { Bad, Loader, Ok, Row, Switch } from './parts'
+import { useDialog, useToast } from '../Feedback'
+import { Bad, Field, FormAlert, Loader, Ok, Row, Switch, busyProps, fixLead, useFieldCheck } from './parts'
 import * as accountApi from '../../features/account/api'
 import { useResource } from '../../features/account/useResource'
 import { resolveFieldMessage } from '../../shared/api/messages'
+import { say, shout } from '../../shared/a11y'
 import {
   PLATFORM_ICON,
   STATUS_TAG,
   TXN_TAG,
   date,
-  label,
   textOf,
   money,
 } from '../../features/account/labels'
@@ -18,7 +19,7 @@ import {
 /* ==========================================================================
    ACCOUNT PANELS
 
-   One panel per feature, each reading its own endpoint. Two shapes recur and
+   One panel per feature, each reading its own endpoint. Three shapes recur and
    are worth naming once:
 
      · A free account is the normal state, not an edge case. Everything here
@@ -27,6 +28,10 @@ import {
      · A write is followed by a re-read, not by a local guess. The server
        decides what a cancellation did to `expires_at`; echoing our own
        assumption would be right until the day it is not.
+     · Anything destructive goes through the shared dialog: what it does, what
+       you keep, what it costs, and a way out that holds the default focus.
+       The confirm used to expand inline under the button, where it looked
+       different on every card and could sit below the fold unseen.
    ========================================================================== */
 
 /** "Unlimited", "3 hours", "45 minutes" — from the server's own allowance. */
@@ -39,6 +44,40 @@ function dailyLabel(sub) {
     return `${h} hour${h === 1 ? '' : 's'}`
   }
   return `${mins} minutes`
+}
+
+/**
+ * Focus the first of `ids` that exists, once the dialog that led here has
+ * finished closing.
+ *
+ * A dialog action can outrun the dialog's own exit: the request answers while
+ * the close animation is still playing, and focus() on anything behind an open
+ * modal <dialog> is refused. The dialog then restores focus to its opener a
+ * tick after it closes — so this waits for it to close, and lands one tick
+ * after that, so the element that actually exists now gets the last word.
+ */
+const focusSoon = (...ids) => {
+  let tries = 0
+  const tick = () => {
+    if (document.getElementById('dlg')?.open && tries++ < 40) {
+      setTimeout(tick, 50)
+      return
+    }
+    setTimeout(() => {
+      const el = ids.map((id) => document.getElementById(id)).find(Boolean)
+      el?.focus()
+    }, 10)
+  }
+  setTimeout(tick, 0)
+}
+
+/** Server field errors -> this form's keys, via a wire-name table. */
+function mapFields(error, table) {
+  const out = {}
+  for (const [wire, text] of Object.entries(error?.fieldErrors ?? {})) {
+    if (table[wire]) out[table[wire]] = text
+  }
+  return out
 }
 
 /* ---------- overview ---------- */
@@ -55,7 +94,7 @@ export function Overview({ user, subscription, devices, onClose, enabled = true 
   return (
     <>
       <div className="ac-head">
-        <h2 id="ac-title">Hei, <span>{user.local}</span></h2>
+        <h2 id="ac-title">Hei, <span id="ac-hello">{user.local}</span></h2>
         <p>
           Everything about your account lives here. Your plan, your invoices, the devices you are signed in
           on, and the switches that decide what we email you.
@@ -65,15 +104,15 @@ export function Overview({ user, subscription, devices, onClose, enabled = true 
       <div className="ac-grid">
         <div className="ac-stat">
           <div className="k">Current plan</div>
-          <div className="v">{sub ? (sub.plan ? textOf(sub.plan.name, sub.plan.name_key) : 'Free') : '—'}</div>
-          <div className="n">
+          <div className="v" id="ac-plan-name">{sub ? (sub.plan ? textOf(sub.plan.name, sub.plan.name_key) : 'Free') : '—'}</div>
+          <div className="n" id="ac-plan-note">
             {sub?.plan ? 'Premium, every feature included' : 'Upgrade for the full service'}
           </div>
         </div>
         <div className="ac-stat">
           <div className="k">{sub?.auto_renew ? 'Renews on' : 'Ends on'}</div>
-          <div className="v mono">{date(sub?.expires_at)}</div>
-          <div className="n">
+          <div className="v mono" id="ac-renew">{date(sub?.expires_at)}</div>
+          <div className="n" id="ac-renew-note">
             {!sub || !sub.plan
               ? 'Free plans do not expire'
               : sub.auto_renew
@@ -84,7 +123,7 @@ export function Overview({ user, subscription, devices, onClose, enabled = true 
         <div className="ac-stat">
           <div className="k">Devices</div>
           <div className="v mono">
-            {dev ? dev.used : '—'} <em>/ {dev ? dev.max_devices : sub?.max_devices ?? '—'}</em>
+            <span id="ac-dev-count">{dev ? dev.used : '—'}</span> <em>/ {dev ? dev.max_devices : sub?.max_devices ?? '—'}</em>
           </div>
           <div className="n">
             {dev && dev.used >= dev.max_devices ? 'Sign one out to free a slot' : 'Slots free'}
@@ -141,58 +180,98 @@ export function Overview({ user, subscription, devices, onClose, enabled = true 
 
 /* ---------- subscription ---------- */
 export function Subscription({ subscription, onClose }) {
-  const reasons = useResource(accountApi.getCancelReasons, { enabled: false })
-  const [asking, setAsking] = useState(false)
+  const dialog = useDialog()
+  const toast = useToast()
   const [reasonId, setReasonId] = useState('')
+  const [reasonErr, setReasonErr] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [ok, setOk] = useState(null)
 
   const sub = subscription.data
-  const tag = STATUS_TAG[sub?.status] ?? { text: sub?.status ?? '', tone: 'warn' }
   /* `cancelled` still has time on the clock — the plan runs to expires_at and
      only then drops to free, so it is not the same as having no plan */
   const canCancel = sub?.plan && sub.auto_renew
   const canReactivate = sub?.plan && !sub.auto_renew && sub.status !== 'expired'
+  const ends = date(sub?.expires_at)
+  const tag = sub?.status === 'cancelled'
+    ? { text: `Cancels ${ends}`, tone: 'warn' }
+    : STATUS_TAG[sub?.status] ?? { text: sub?.status ?? '', tone: 'warn' }
 
+  /* the reasons are only worth fetching for someone who can actually cancel */
+  const reasons = useResource(accountApi.getCancelReasons, { enabled: !!canCancel })
+
+  /* The reason is asked on the card, before the dialog, because the API will
+     not cancel without one (`reason_id` is `required,uuid` on
+     billing.CancelRequest) — and a dialog that collects a field it then cannot
+     show an error against is one you get bounced back out of. */
   const startCancel = () => {
     setError(null)
     setOk(null)
-    setAsking(true)
-    if (!reasons.data) reasons.reload()
+    if (!reasonId) {
+      const msg = 'Choose the reason closest to yours, then cancel'
+      setReasonErr(msg)
+      shout(`Why are you leaving? ${msg}`)
+      document.getElementById('ac-reason')?.focus()
+      return
+    }
+    setReasonErr(null)
+    dialog({
+      kind: 'warn',
+      title: 'Cancel your subscription?',
+      body: (
+        <>
+          You keep every premium feature until <b>{ends}</b> — nothing switches off today. After that your
+          subscription ends, your account remains available, and you can resubscribe at any time.
+        </>
+      ),
+      actions: [
+        { label: 'Keep my plan', style: 'btn-ghost' },
+        { label: 'Cancel subscription', style: 'btn-red', act: confirmCancel },
+      ],
+    })
   }
 
   const confirmCancel = async () => {
-    /* `reason_id` is `required,uuid` on billing.CancelRequest, so "pick a
-       reason" is the server's sentence to write, not ours — it already ships
-       it as error.validation.reasonIdRequired in every language it supports. */
     setBusy(true)
     setError(null)
     try {
       await accountApi.cancelSubscription({ reasonId })
-      setAsking(false)
-      setOk('Cancelled. Your plan stays on until it expires.')
-      await subscription.reload()
+      const fresh = await subscription.reload()
+      const until = date(fresh?.expires_at ?? sub.expires_at)
+      setOk(`Cancelled. Premium stays on until ${until}.`)
+      toast(`Subscription cancelled. Premium stays on until ${until}.`, 'ok')
+      focusSoon('ac-reactivate', 'acp-subscription')
     } catch (e) {
-      /* The strip takes a string as readily as an error, so when the server
-         names the one input this panel has, show that rather than the generic
-         "check the highlighted fields" — nothing here is highlighted. */
-      setError(e?.fieldErrors?.reason_id || e)
+      /* the server names the one input this card has — show it there, in its
+         own words, rather than as "check the highlighted fields" */
+      const named = e?.fieldErrors?.reason_id
+      if (named) {
+        setReasonErr(named)
+        focusSoon('ac-reason')
+      } else {
+        setError(e)
+      }
+      shout(named || e?.text || 'The subscription could not be cancelled.')
     } finally {
       setBusy(false)
     }
   }
 
   const reactivate = async () => {
+    if (busy) return
     setBusy(true)
     setError(null)
     setOk(null)
     try {
       await accountApi.reactivateSubscription()
       setOk('Auto-renewal is back on.')
+      toast('Auto-renewal is back on.', 'ok')
       await subscription.reload()
+      focusSoon('ac-cancel', 'acp-subscription')
     } catch (e) {
       setError(e)
+      shout(e?.text || 'Auto-renewal could not be turned back on.')
     } finally {
       setBusy(false)
     }
@@ -201,7 +280,7 @@ export function Subscription({ subscription, onClose }) {
   return (
     <>
       <div className="ac-head">
-        <h2>Subscription</h2>
+        <h2 id="ac-title">Subscription</h2>
         <p>What you are on now, when it renews, and how to change either of those.</p>
       </div>
 
@@ -211,20 +290,20 @@ export function Subscription({ subscription, onClose }) {
             <div className="ac-card dark">
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
                 <div>
-                  <h3>{sub.plan ? `${textOf(sub.plan.name, sub.plan.name_key)} plan` : 'Free plan'}</h3>
+                  <h3 id="ac-sub-plan">{sub.plan ? `${textOf(sub.plan.name, sub.plan.name_key)} plan` : 'Free plan'}</h3>
                   <p className="sub" style={{ marginTop: 6 }}>
                     {sub.plan
                       ? `${money(sub.plan.price, sub.plan.currency)} · ${sub.plan.max_devices} device${sub.plan.max_devices > 1 ? 's' : ''} · ${sub.plan.duration_days} days`
-                      : 'No charge, and no expiry. Limited servers and a daily data cap.'}
+                      : 'No charge, and no expiry. Limited servers and a daily time cap.'}
                   </p>
                 </div>
-                <span className={`ac-tag ${tag.tone}`} style={{ marginLeft: 'auto' }}>{tag.text}</span>
+                <span className={`ac-tag ${tag.tone}`} id="ac-sub-state" style={{ marginLeft: 'auto' }}>{tag.text}</span>
               </div>
               <div className="ac-facts">
                 <div><div className="sub">Started</div><b className="mono">{date(sub.started_at)}</b></div>
                 <div>
-                  <div className="sub">{sub.auto_renew ? 'Renews' : 'Ends'}</div>
-                  <b className="mono">{date(sub.expires_at)}</b>
+                  <div className="sub" id="ac-sub-endlabel">{sub.auto_renew ? 'Renews' : 'Ends'}</div>
+                  <b className="mono" id="ac-sub-end">{ends}</b>
                 </div>
                 <div>
                   <div className="sub">Days left</div>
@@ -237,15 +316,17 @@ export function Subscription({ subscription, onClose }) {
               <Row
                 title="Auto-renewal"
                 note={
-                  !sub.plan
-                    ? 'There is nothing to renew on the free plan.'
-                    : sub.auto_renew
-                      ? `On. We will charge you again on ${date(sub.expires_at)} and your access carries on without a gap.`
-                      : `Off. Your plan runs out on ${date(sub.expires_at)} and the account drops to the free tier.`
+                  <span id="ac-auto-note">
+                    {!sub.plan
+                      ? 'There is nothing to renew on the free plan.'
+                      : sub.auto_renew
+                        ? `On. We will charge ${money(sub.plan.price, sub.plan.currency)} on ${ends} and your access carries on without a gap.`
+                        : `Off. Premium access remains active until ${ends}. Your subscription will not renew after this date.`}
+                  </span>
                 }
               >
                 {/* turning this off IS the cancellation — the backend has no
-                    separate switch, so it opens the same reason prompt */}
+                    separate switch, so it takes the same path as the button */}
                 <Switch
                   on={!!sub.auto_renew}
                   busy={busy}
@@ -268,7 +349,7 @@ export function Subscription({ subscription, onClose }) {
               <h3>What is included</h3>
               <p className="sub">
                 {sub.benefits.length
-                  ? 'Everything your plan carries right now.'
+                  ? 'Everything your plan carries right now. Nothing here is sold as an add-on.'
                   : 'Upgrade to unlock the full service.'}
               </p>
               <div className="ac-grid" style={{ marginTop: 18, gap: 10 }}>
@@ -276,7 +357,7 @@ export function Subscription({ subscription, onClose }) {
                   <span
                     key={key}
                     className="ac-tag good"
-                    style={{ textTransform: 'none', letterSpacing: 0, fontSize: 13, fontWeight: 600 }}
+                    style={{ textTransform: 'none', letterSpacing: 0, fontSize: 'var(--fs-200)', fontWeight: 600 }}
                   >
                     {/* index-aligned with the keys — see PlanPayload.FeatureLabels */}
                     {textOf(sub.plan?.feature_labels?.[i], key)}
@@ -285,53 +366,62 @@ export function Subscription({ subscription, onClose }) {
               </div>
             </div>
 
-            {(canCancel || canReactivate || asking) && (
+            {(canCancel || canReactivate || ok) && (
               <div className="ac-card danger">
-                <h3>{canReactivate && !asking ? 'Restart auto-renewal' : 'Cancel subscription'}</h3>
-                <p className="sub" style={{ marginTop: 6 }}>
-                  {canReactivate && !asking
-                    ? `Your plan is set to end on ${date(sub.expires_at)}. Turn renewal back on and nothing changes.`
-                    : `You keep everything until ${date(sub.expires_at)}. After that the account drops to the free tier instead of being deleted.`}
-                </p>
-
-                {asking && (
+                {canReactivate ? (
                   <>
-                    <label className="fld" style={{ maxWidth: 420 }}>
-                      <span>Why are you leaving?</span>
-                      <Loader {...reasons}>
-                        <select value={reasonId} onChange={(e) => setReasonId(e.target.value)}>
+                    <h3>Restart auto-renewal</h3>
+                    <p className="sub" style={{ marginTop: 6 }}>
+                      Your plan is set to end on {ends}. Turn renewal back on and nothing changes.
+                    </p>
+                    <div className="ac-actions">
+                      <button {...busyProps(busy, 'btn btn-ghost btn-sm')} type="button" id="ac-reactivate" onClick={reactivate}>
+                        <span className="spin" aria-hidden="true" />
+                        <span>Turn renewal back on</span>
+                      </button>
+                    </div>
+                  </>
+                ) : canCancel ? (
+                  <>
+                    <h3>Cancel subscription</h3>
+                    <p className="sub" style={{ marginTop: 6 }}>
+                      Your premium access stays active until the end of your current billing period. After that
+                      your subscription ends and your account remains available.
+                    </p>
+                    <Loader {...reasons}>
+                      <div className={`fld${reasonErr ? ' bad' : ''}`} id="fld-reason" style={{ maxWidth: 420 }}>
+                        <label className="lbl" htmlFor="ac-reason">Why are you leaving?</label>
+                        <select
+                          id="ac-reason"
+                          value={reasonId}
+                          aria-invalid={reasonErr ? true : undefined}
+                          aria-describedby="hint-reason er-reason"
+                          onChange={(e) => {
+                            setReasonId(e.target.value)
+                            if (e.target.value) setReasonErr(null)
+                          }}
+                        >
                           <option value="">Choose a reason…</option>
                           {reasons.data?.map((r) => (
                             <option key={r.id} value={r.id}>{textOf(r.reason, r.reason_key)}</option>
                           ))}
                         </select>
-                      </Loader>
-                    </label>
-                    <div className="ac-actions">
-                      <button type="button" className="btn btn-red btn-sm" disabled={busy} onClick={confirmCancel}>
-                        {busy ? 'Cancelling…' : 'Yes, cancel it'}
-                      </button>
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAsking(false)}>
-                        Keep my plan
+                        <span className="hint" id="hint-reason">One answer, so we know what to fix. It does not change what happens to your plan.</span>
+                        <em className="err" id="er-reason">{reasonErr}</em>
+                      </div>
+                    </Loader>
+                    {/* the confirm used to expand inline here. It now goes
+                        through the shared dialog, so "are you sure" looks and
+                        dismisses the same way everywhere and cannot be missed
+                        below the fold. */}
+                    <div className="ac-actions" id="ac-cancel-wrap">
+                      <button {...busyProps(busy, 'btn btn-ghost btn-sm')} type="button" id="ac-cancel" onClick={startCancel}>
+                        <span className="spin" aria-hidden="true" />
+                        <span>Cancel subscription</span>
                       </button>
                     </div>
                   </>
-                )}
-
-                {!asking && canCancel && (
-                  <div className="ac-actions">
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={startCancel}>
-                      Cancel subscription
-                    </button>
-                  </div>
-                )}
-                {!asking && canReactivate && (
-                  <div className="ac-actions">
-                    <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={reactivate}>
-                      {busy ? 'Turning it on…' : 'Turn renewal back on'}
-                    </button>
-                  </div>
-                )}
+                ) : null}
 
                 <Bad error={error} />
                 <Ok on={!!ok}>{ok}</Ok>
@@ -360,13 +450,14 @@ export function Billing({ user }) {
       window.open(invoice.invoice_url, '_blank', 'noopener')
     } catch (e) {
       setError(e)
+      shout(e?.text || 'The invoice could not be opened.')
     }
   }
 
   return (
     <>
       <div className="ac-head">
-        <h2>Billing &amp; invoices</h2>
+        <h2 id="ac-title">Billing &amp; invoices</h2>
         <p>
           Your payment method and every receipt we have issued. Invoices stay downloadable even after a plan
           ends.
@@ -379,7 +470,7 @@ export function Billing({ user }) {
           title={method ?? 'No payment method yet'}
           note={method ? 'Used for your most recent payment' : 'One is saved the first time you subscribe'}
         />
-        <Row title="Billing email" note={user.email} />
+        <Row title="Billing email" note={<span id="ac-bill-mail">{user.email}</span>} />
       </div>
 
       <div className="ac-card">
@@ -396,7 +487,10 @@ export function Billing({ user }) {
             <div className="ac-scroll">
               <table className="ac-table">
                 <thead>
-                  <tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th /></tr>
+                  <tr>
+                    <th scope="col">Date</th><th scope="col">Description</th><th scope="col">Amount</th>
+                    <th scope="col">Status</th><th scope="col"><span className="sr-only">Invoice</span></th>
+                  </tr>
                 </thead>
                 <tbody>
                   {txns.data?.map((t) => {
@@ -409,8 +503,15 @@ export function Billing({ user }) {
                         <td><span className={`ac-tag ${tag.tone}`}>{tag.text}</span></td>
                         <td style={{ textAlign: 'right' }}>
                           {t.invoice_no && (
-                            <button type="button" className="dl" onClick={() => openInvoice(t)}>
-                              <Download />PDF
+                            /* "PDF" six times over is six identical names —
+                               the label says which receipt each one is */
+                            <button
+                              type="button"
+                              className="dl"
+                              aria-label={`Invoice for ${date(t.date)}, PDF`}
+                              onClick={() => openInvoice(t)}
+                            >
+                              <Download aria-hidden="true" focusable="false" />PDF
                             </button>
                           )}
                         </td>
@@ -430,6 +531,8 @@ export function Billing({ user }) {
 
 /* ---------- devices ---------- */
 export function Devices({ devices }) {
+  const dialog = useDialog()
+  const toast = useToast()
   const [busyId, setBusyId] = useState(null)
   const [error, setError] = useState(null)
   const [ok, setOk] = useState(false)
@@ -437,42 +540,93 @@ export function Devices({ devices }) {
   const list = devices.data?.devices ?? []
   const max = devices.data?.max_devices ?? 0
   const used = devices.data?.used ?? 0
+  const others = list.filter((x) => !x.is_current)
+  const nameOf = (d) => d.model || d.platform
 
-  const signOut = async (id) => {
-    setBusyId(id)
-    setError(null)
-    try {
-      await accountApi.removeDevice(id)
-      await devices.reload()
-    } catch (e) {
-      setError(e)
-    } finally {
-      setBusyId(null)
-    }
+  const signOut = (d) => {
+    dialog({
+      kind: 'warn',
+      title: `Sign out ${nameOf(d)}?`,
+      body: (
+        <>
+          It is signed out straight away, wherever it is, and frees a slot on your plan. Getting back on
+          from that device takes your password.
+        </>
+      ),
+      actions: [
+        { label: 'Keep it signed in', style: 'btn-ghost' },
+        {
+          label: 'Sign it out',
+          style: 'btn-red',
+          act: async () => {
+            setBusyId(d.id)
+            setError(null)
+            setOk(false)
+            try {
+              await accountApi.removeDevice(d.id)
+              await devices.reload()
+              toast(`${nameOf(d)} signed out.`, 'ok')
+              /* its row is gone, and the button with it — land on the panel
+                 rather than on <body> */
+              focusSoon('acp-devices')
+            } catch (e) {
+              setError(e)
+              shout(e?.text || `${nameOf(d)} could not be signed out.`)
+            } finally {
+              setBusyId(null)
+            }
+          },
+        },
+      ],
+    })
   }
 
-  const signOutOthers = async () => {
-    setError(null)
-    setBusyId('all')
-    try {
-      /* one at a time, not Promise.all: the endpoint is per device and a burst
-         of deletes is exactly what the rate limiter is there to stop */
-      for (const d of list.filter((x) => !x.is_current)) {
-        await accountApi.removeDevice(d.id)
-      }
-      await devices.reload()
-      setOk(true)
-    } catch (e) {
-      setError(e)
-    } finally {
-      setBusyId(null)
-    }
+  const signOutOthers = () => {
+    const n = others.length
+    const count = `${n} device${n === 1 ? '' : 's'}`
+    dialog({
+      kind: 'warn',
+      title: 'Sign out other devices?',
+      body: (
+        <>
+          This signs out <b>{count}</b> and leaves this one signed in. Anyone using them will need your
+          password to get back on.
+        </>
+      ),
+      actions: [
+        { label: 'Leave them signed in', style: 'btn-ghost' },
+        {
+          label: 'Sign them out',
+          style: 'btn-red',
+          act: async () => {
+            setError(null)
+            setBusyId('all')
+            try {
+              /* one at a time, not Promise.all: the endpoint is per device and a
+                 burst of deletes is exactly what the rate limiter is there to stop */
+              for (const d of others) {
+                await accountApi.removeDevice(d.id)
+              }
+              await devices.reload()
+              setOk(true)
+              toast(`${count} signed out.`, 'ok')
+              focusSoon('acp-devices')
+            } catch (e) {
+              setError(e)
+              shout(e?.text || 'Not every device could be signed out.')
+            } finally {
+              setBusyId(null)
+            }
+          },
+        },
+      ],
+    })
   }
 
   return (
     <>
       <div className="ac-head">
-        <h2>Devices</h2>
+        <h2 id="ac-title">Devices</h2>
         <p>
           Your plan decides how many can be signed in at once. Signing a device out here logs it out
           immediately, wherever it is.
@@ -483,13 +637,13 @@ export function Devices({ devices }) {
         <>
           <div className="ac-card">
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <h3>{used} of {max} slot{max === 1 ? '' : 's'} in use</h3>
-              <span className="sub">{Math.max(0, max - used)} free</span>
+              <h3><span id="ac-dev-n">{used}</span> of {max} slot{max === 1 ? '' : 's'} in use</h3>
+              <span className="sub" id="ac-dev-free">{Math.max(0, max - used)} free</span>
             </div>
-            <div className="meter"><i style={{ width: `${max ? Math.min(100, (used / max) * 100) : 0}%` }} /></div>
+            <div className="meter"><i id="ac-dev-bar" style={{ width: `${max ? Math.min(100, (used / max) * 100) : 0}%` }} /></div>
           </div>
 
-          <div className="ac-card">
+          <div className="ac-card" id="ac-dev-list">
             {list.length === 0 ? (
               <p className="ac-quiet">
                 No devices yet. Signing in from the RusVPN app on a phone or a desktop adds it here — the
@@ -499,20 +653,24 @@ export function Devices({ devices }) {
               list.map((d) => (
                 <Row
                   key={d.id}
+                  data-device=""
                   icon={{ name: PLATFORM_ICON[d.platform] ?? 'desktop', red: d.is_current }}
-                  title={`${d.model || d.platform}${d.is_current ? ' · This device' : ''}`}
+                  title={`${nameOf(d)}${d.is_current ? ' · This device' : ''}`}
                   note={`Last active ${date(d.last_active_at)} · ${d.platform}${d.app_version ? ` ${d.app_version}` : ''}`}
                 >
                   {d.is_current ? (
                     <span className="ac-tag good act">Current</span>
                   ) : (
                     <button
+                      {...busyProps(busyId === d.id, 'btn btn-ghost btn-sm act')}
                       type="button"
-                      className="btn btn-ghost btn-sm act"
-                      disabled={busyId === d.id}
-                      onClick={() => signOut(d.id)}
+                      data-signout=""
+                      /* "Sign out" on every row is a list of identical names */
+                      aria-label={`Sign out ${nameOf(d)}`}
+                      onClick={() => busyId === null && signOut(d)}
                     >
-                      {busyId === d.id ? 'Signing out…' : 'Sign out'}
+                      <span className="spin" aria-hidden="true" />
+                      <span>Sign out</span>
                     </button>
                   )}
                 </Row>
@@ -520,17 +678,25 @@ export function Devices({ devices }) {
             )}
           </div>
 
-          {list.some((d) => !d.is_current) && (
+          {(others.length > 0 || ok) && (
             <div className="ac-card danger">
               <h3>Sign out everywhere</h3>
               <p className="sub" style={{ marginTop: 6 }}>
                 Ends every session except the one you are using right now. Handy if you lost a phone.
               </p>
-              <div className="ac-actions">
-                <button type="button" className="btn btn-ghost btn-sm" disabled={busyId === 'all'} onClick={signOutOthers}>
-                  {busyId === 'all' ? 'Signing them out…' : 'Sign out all other devices'}
-                </button>
-              </div>
+              {others.length > 0 && (
+                <div className="ac-actions">
+                  <button
+                    {...busyProps(busyId === 'all', 'btn btn-ghost btn-sm')}
+                    type="button"
+                    id="ac-dev-all"
+                    onClick={() => busyId === null && signOutOthers()}
+                  >
+                    <span className="spin" aria-hidden="true" />
+                    <span>Sign out all other devices</span>
+                  </button>
+                </div>
+              )}
               <Ok on={ok}>Done. Only this device is still signed in.</Ok>
             </div>
           )}
@@ -542,144 +708,160 @@ export function Devices({ devices }) {
 }
 
 /* ---------- security ---------- */
+
+const PW_LABEL = { cur: 'Current password', pw: 'New password', again: 'Confirm new password' }
+const PW_ID = { cur: 'ac-cur', pw: 'ac-new', again: 'ac-again' }
+const PW_SLOT = { cur: 'cur', pw: 'new', again: 'again' }
+
+/* the same rules and the same timing the auth page uses, so a form inside the
+   account never behaves differently from one outside it. The strength rule is
+   the server's BR-09, stated in its own terms. */
+function checkPw(k, v) {
+  if (k === 'cur' && !v.cur) return 'Enter the password you use now'
+  if (k === 'pw') {
+    if (!v.pw) return 'Enter the password you want to switch to'
+    if (v.pw.length < 8 || !/[A-Za-z]/.test(v.pw) || !/\d/.test(v.pw)) {
+      return 'Use at least 8 characters, with at least one letter and one number'
+    }
+    if (v.pw === v.cur) return 'This is your current password — pick a different one'
+  }
+  if (k === 'again') {
+    if (!v.again) return 'Type the new password a second time to confirm it'
+    if (v.again !== v.pw) return resolveFieldMessage('error.validation.confirmMismatch') || 'The two passwords do not match'
+  }
+  return null
+}
+
 export function Security({ onDevicesChanged }) {
   const [cur, setCur] = useState('')
   const [pw, setPw] = useState('')
   const [again, setAgain] = useState('')
-  const [err, setErr] = useState({})
-  const [error, setError] = useState(null)
+  const [alert, setAlert] = useState(null)
   const [ok, setOk] = useState(false)
   const [busy, setBusy] = useState(false)
   const inputs = { cur: useRef(null), pw: useRef(null), again: useRef(null) }
+  const fields = useFieldCheck({ cur, pw, again }, checkPw)
 
   /* Wire name -> the input it belongs to. The server validates `old_password`
      and `new_password` (user.ChangePasswordRequest); this form calls them cur
      and pw. */
   const FIELD_MAP = { old_password: 'cur', new_password: 'pw' }
 
-  const focusFirst = (bad) => {
-    /* the class that marks a bad field lands on the next render, so pick the
-       field to focus from the errors themselves */
-    const k = ['cur', 'pw', 'again'].find((n) => bad[n])
-    if (k) inputs[k].current?.focus()
+  const summarise = (bad) => {
+    const lead = fixLead(bad.length)
+    setAlert({
+      kind: 'bad',
+      lead,
+      items: bad.map((b) => ({ id: PW_ID[b.key], label: PW_LABEL[b.key], msg: b.msg })),
+    })
+    shout(`${lead}. ${bad.map((b) => `${PW_LABEL[b.key]}, ${b.msg}`).join('. ')}`)
+    inputs[bad[0].key].current?.focus()
   }
 
   const submit = async (e) => {
     e.preventDefault()
     if (busy) return
     setOk(false)
-    setError(null)
+    setAlert(null)
 
-    /* Only what the server cannot answer for us. The presence checks and the
-       BR-09 strength rule used to live here as well, duplicating
-       `validate:"required,password"` — and a duplicate rule is one that can
-       disagree with the real one. What is left has no server counterpart:
-       `again` is never sent (the request carries old_password and new_password
-       and nothing else), and "pick a different password" is not a rule the API
-       enforces. */
-    const next = {}
-    if (again !== pw) next.again = resolveFieldMessage('error.validation.confirmMismatch')
-    else if (pw && pw === cur) next.pw = resolveFieldMessage('error.validation.samePassword')
-
-    setErr(next)
-    if (Object.keys(next).length) {
-      focusFirst(next)
+    const bad = fields.validate(['cur', 'pw', 'again'])
+    if (bad.length) {
+      summarise(bad)
       return
     }
 
     setBusy(true)
+    say('Saving your new password…')
     try {
       await accountApi.changePassword({ oldPassword: cur, newPassword: pw })
       setCur('')
       setPw('')
       setAgain('')
+      fields.reset()
       setOk(true)
+      say('Password updated. Other devices have been signed out.')
       /* the server revokes the other sessions, so the device list just changed
          underneath us */
       onDevicesChanged?.()
-    } catch (e) {
-      const mapped = {}
-      for (const [wire, text] of Object.entries(e?.fieldErrors ?? {})) {
-        const target = FIELD_MAP[wire]
-        if (target) mapped[target] = text
-      }
+    } catch (err) {
+      const mapped = mapFields(err, FIELD_MAP)
 
       /* A wrong current password is an auth rejection, not a validation one —
          the server answers AUTH_002 with no `error[]`, because nothing about
          the request was malformed. It is still about one input, so it is shown
          there, in the server's own words rather than ours. */
-      if (!Object.keys(mapped).length && (e?.code === 'AUTH_002' || e?.i18nKey === 'error.auth.passwordMismatch')) {
-        mapped.cur = e.text
+      if (!Object.keys(mapped).length && (err?.code === 'AUTH_002' || err?.i18nKey === 'error.auth.passwordMismatch')) {
+        mapped.cur = err.text
       }
 
-      if (Object.keys(mapped).length) {
-        setErr(mapped)
-        focusFirst(mapped)
+      const named = ['cur', 'pw', 'again'].filter((k) => mapped[k]).map((k) => ({ key: k, msg: mapped[k] }))
+      if (named.length) {
+        fields.show(mapped)
+        summarise(named)
       } else {
-        setError(e)
+        const text = err?.text || 'Your password could not be changed. Please try again.'
+        setAlert({ kind: 'bad', body: text })
+        shout(text)
       }
     } finally {
       setBusy(false)
     }
   }
 
-  const fld = (k) => `fld${err[k] ? ' bad' : ''}`
+  const field = (k) => ({ id: PW_ID[k], slot: PW_SLOT[k], label: PW_LABEL[k], inputRef: inputs[k], ...fields.props(k) })
 
   return (
     <>
       <div className="ac-head">
-        <h2>Security</h2>
-        <p>Your password, and what happens to your other sessions when you change it.</p>
+        <h2 id="ac-title">Security</h2>
+        <p>Your password, and what we do when someone signs in from somewhere new.</p>
       </div>
 
       <div className="ac-card">
         <h3>Change password</h3>
         <p className="sub">Changing it signs out every other device automatically.</p>
-        <form noValidate style={{ maxWidth: 420 }} onSubmit={submit}>
-          <label className={fld('cur')}>
-            <span>Current password</span>
-            <input
-              ref={inputs.cur}
-              type="password"
-              placeholder="Enter your current password"
-              autoComplete="current-password"
-              value={cur}
-              onChange={(e) => setCur(e.target.value)}
-            />
-            <em className="err">{err.cur}</em>
-          </label>
-          <label className={fld('pw')}>
-            <span>New password</span>
-            <input
-              ref={inputs.pw}
-              type="password"
-              placeholder="At least 8 characters, with a number"
-              autoComplete="new-password"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-            />
-            <em className="err">{err.pw}</em>
-          </label>
-          <label className={fld('again')}>
-            <span>Confirm new password</span>
-            <input
-              ref={inputs.again}
-              type="password"
-              placeholder="Type it once more"
-              autoComplete="new-password"
-              value={again}
-              onChange={(e) => setAgain(e.target.value)}
-            />
-            <em className="err">{err.again}</em>
-          </label>
+        <form id="ac-pw-form" noValidate style={{ maxWidth: 440 }} onSubmit={submit} aria-busy={busy}>
+          <FormAlert alert={alert} id="ac-pw-alert" />
+          <Field
+            {...field('cur')}
+            type="password"
+            placeholder="Enter your current password"
+            autoComplete="current-password"
+            value={cur}
+            onChange={(e) => setCur(e.target.value)}
+          />
+          <Field
+            {...field('pw')}
+            hint="At least 8 characters, with a letter and a number, and different from your current one."
+            type="password"
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+          />
+          <Field
+            {...field('again')}
+            type="password"
+            placeholder="Type it once more"
+            autoComplete="new-password"
+            value={again}
+            onChange={(e) => setAgain(e.target.value)}
+          />
           <div className="ac-actions">
-            <button className="btn btn-red btn-sm" type="submit" disabled={busy}>
-              <span>{busy ? 'Saving…' : 'Save new password'}</span><Arw />
+            <button {...busyProps(busy, 'btn btn-red btn-sm')} type="submit">
+              <span className="spin" aria-hidden="true" />
+              <span>Save new password</span><Arw />
             </button>
           </div>
         </form>
-        <Bad error={error} />
         <Ok on={ok}>Password updated. Other devices have been signed out.</Ok>
+      </div>
+
+      {/* Two-factor sits on this card in the design. It is left out until the
+          backend has an endpoint for it — a switch that saves nothing would be
+          a promise about the account that is not true. */}
+      <div className="ac-card">
+        <PrefRows prefs={[SIGNIN_ALERTS]} />
       </div>
     </>
   )
@@ -688,15 +870,23 @@ export function Security({ onDevicesChanged }) {
 /* ---------- notifications ---------- */
 
 /* The settings row stores a free-form JSON map, so the keys are the client's
-   to define. These four are what this page offers. */
+   to define. Sign-in alerts are a security control as much as an email, so
+   that one is offered on the Security panel; it is the same stored key. */
+const SIGNIN_ALERTS = {
+  key: 'signin_alerts',
+  title: 'Alert me about new sign-ins',
+  label: 'New sign-in alerts',
+  note: 'An email whenever your account is used on a device we have not seen before.',
+  fallback: true,
+}
 const PREFS = [
   { key: 'renewal_reminders', title: 'Renewal reminders', note: 'A heads-up seven days before we charge you, so nothing is a surprise.', fallback: true },
   { key: 'product_updates', title: 'Product updates', note: 'New servers, new features, app releases. Roughly once a month.', fallback: true },
   { key: 'offers', title: 'Offers and discounts', note: 'Occasional deals on longer plans. Off by default.', fallback: false },
-  { key: 'signin_alerts', title: 'New sign-in alerts', note: 'An email whenever your account is used on a device we have not seen before.', fallback: true },
 ]
 
-export function Notifications() {
+/** A run of switches, each one a key in the stored notifications map. */
+function PrefRows({ prefs, lead }) {
   const settings = useResource(accountApi.getSettings)
   const [busyKey, setBusyKey] = useState(null)
   const [error, setError] = useState(null)
@@ -712,8 +902,10 @@ export function Notifications() {
     try {
       const saved = await accountApi.saveNotificationPrefs({ ...stored, [p.key]: next })
       settings.set(saved)
+      say(`${p.label ?? p.title} ${next ? 'on' : 'off'}`)
     } catch (e) {
       setError(e)
+      shout(e?.text || `${p.label ?? p.title} could not be saved.`)
     } finally {
       setBusyKey(null)
     }
@@ -721,30 +913,43 @@ export function Notifications() {
 
   return (
     <>
+      <Loader {...settings}>
+        <>
+          {lead}
+          {prefs.map((p) => (
+            <Row key={p.key} title={p.title} note={p.note}>
+              <Switch
+                on={valueOf(p)}
+                busy={busyKey === p.key}
+                label={p.label ?? p.title}
+                onChange={(next) => toggle(p, next)}
+              />
+            </Row>
+          ))}
+        </>
+      </Loader>
+      <Bad error={error} />
+    </>
+  )
+}
+
+export function Notifications() {
+  return (
+    <>
       <div className="ac-head">
-        <h2>Notifications</h2>
+        <h2 id="ac-title">Notifications</h2>
         <p>We keep this short. Security emails cannot be turned off, everything else is yours to decide.</p>
       </div>
 
       <div className="ac-card">
-        <Loader {...settings}>
-          <>
-            <Row title="Security alerts" note="Password changes and anything else that touches access.">
+        <PrefRows
+          prefs={PREFS}
+          lead={
+            <Row title="Security alerts" note="New sign-ins, password changes, anything that touches access.">
               <span className="ac-tag good act">Always on</span>
             </Row>
-            {PREFS.map((p) => (
-              <Row key={p.key} title={p.title} note={p.note}>
-                <Switch
-                  on={valueOf(p)}
-                  busy={busyKey === p.key}
-                  label={p.title}
-                  onChange={(next) => toggle(p, next)}
-                />
-              </Row>
-            ))}
-          </>
-        </Loader>
-        <Bad error={error} />
+          }
+        />
       </div>
     </>
   )
@@ -752,36 +957,65 @@ export function Notifications() {
 
 /* ---------- support ---------- */
 export function Support({ onChat, onClose, onDeleted }) {
-  const [asking, setAsking] = useState(false)
+  const dialog = useDialog()
+  const toast = useToast()
   const [password, setPassword] = useState('')
   const [err, setErr] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const field = useRef(null)
 
-  useEffect(() => {
-    if (asking) field.current?.focus()
-  }, [asking])
+  /* The password is asked on the card, before the dialog: DeleteAccountRequest
+     will not go through without it, and the dialog cannot show an error
+     against a field it has already closed over. Empty is caught here because
+     the dialog should never ask "are you sure" about a request that cannot
+     succeed; a wrong one is the server's call. */
+  const ask = () => {
+    setError(null)
+    if (!password) {
+      const msg = 'Enter your password to confirm it is you'
+      setErr(msg)
+      shout(`Confirm with your password. ${msg}`)
+      field.current?.focus()
+      return
+    }
+    setErr(null)
+    dialog({
+      kind: 'danger',
+      title: 'Delete your account?',
+      body: (
+        <>
+          This removes the account, every device signed in on it, and your invoice history.{' '}
+          <b>It cannot be undone</b>, and the time left on your plan is not refunded.
+          <br /><br />
+          If you only want the billing to stop, cancelling the subscription keeps your account and your
+          invoices.
+        </>
+      ),
+      actions: [
+        { label: 'Keep my account', style: 'btn-ghost' },
+        { label: 'Delete everything', style: 'btn-red', act: remove },
+      ],
+    })
+  }
 
   const remove = async () => {
-    /* No local "please type something" gate: DeleteAccountRequest marks
-       `password` required, so an empty box comes back named, with the server's
-       own wording. A wrong one is AUTH_002 and carries no `error[]` — it is
-       still about this input, so it is shown here. */
+    /* A wrong password is AUTH_002 and carries no `error[]` — it is still
+       about this input, so it is shown here. */
     setBusy(true)
-    setErr(null)
-    setError(null)
     try {
       await accountApi.deleteAccount(password)
+      toast('Account deleted.', 'ok')
       onDeleted()
     } catch (e) {
       const named = e?.fieldErrors?.password
       if (named || e?.code === 'AUTH_002') {
         setErr(named || e.text)
-        field.current?.focus()
+        focusSoon('ac-del-pw')
       } else {
         setError(e)
       }
+      shout(named || e?.text || 'The account could not be deleted.')
     } finally {
       setBusy(false)
     }
@@ -790,13 +1024,13 @@ export function Support({ onChat, onClose, onDeleted }) {
   return (
     <>
       <div className="ac-head">
-        <h2>Support</h2>
+        <h2 id="ac-title">Support</h2>
         <p>Real people in Moscow, not a bot that loops you back to the help page.</p>
       </div>
 
       <div className="ac-card">
         <Row icon={{ name: 'bubble', red: true }} title="Live chat" note="Usually answers in under 5 minutes, 24 hours a day.">
-          <button type="button" className="btn btn-ghost btn-sm act" onClick={onChat}>Start a chat</button>
+          <button type="button" className="btn btn-ghost btn-sm act" id="ac-chat" onClick={onChat}>Start a chat</button>
         </Row>
         <Row icon="mail" title="Email us" note="support@rusvpn.com · a reply within one working day.">
           <a href="mailto:support@rusvpn.com" className="btn btn-ghost btn-sm act">Write an email</a>
@@ -814,36 +1048,30 @@ export function Support({ onChat, onClose, onDeleted }) {
           This removes your account and everything attached to it. It cannot be undone, and any time left on
           your plan is not refunded.
         </p>
-        {!asking ? (
-          <div className="ac-actions">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAsking(true)}>
-              Delete my account
-            </button>
-          </div>
-        ) : (
-          <>
-            <label className={`fld${err ? ' bad' : ''}`} style={{ maxWidth: 420 }}>
-              <span>Confirm with your password</span>
-              <input
-                ref={field}
-                type="password"
-                placeholder="Your password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <em className="err">{err}</em>
-            </label>
-            <div className="ac-actions">
-              <button type="button" className="btn btn-red btn-sm" disabled={busy} onClick={remove}>
-                {busy ? 'Deleting…' : 'Yes, delete everything'}
-              </button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setAsking(false); setPassword(''); setErr(null) }}>
-                Never mind
-              </button>
-            </div>
-          </>
-        )}
+        <div style={{ maxWidth: 420 }}>
+          <Field
+            id="ac-del-pw"
+            slot="del-pw"
+            label="Confirm with your password"
+            hint="So nobody can delete the account from a session you left open."
+            error={err}
+            inputRef={field}
+            type="password"
+            placeholder="Your password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (err && e.target.value) setErr(null)
+            }}
+          />
+        </div>
+        <div className="ac-actions" id="ac-del-wrap">
+          <button {...busyProps(busy, 'btn btn-ghost btn-sm')} type="button" id="ac-del" onClick={() => !busy && ask()}>
+            <span className="spin" aria-hidden="true" />
+            <span>Delete my account</span>
+          </button>
+        </div>
         <Bad error={error} />
       </div>
     </>

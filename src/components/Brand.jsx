@@ -21,10 +21,14 @@ export function LogoSprite() {
   )
 }
 
-/* The wordmark IS the logo, so there is no separate text node to line up. */
+/* The wordmark IS the logo, so there is no separate text node to line up.
+   Hidden from assistive tech on purpose: every place it appears is wrapped in
+   something that carries the name — "RusVPN, back to top" on the links, a
+   role="img" span on the auth panel — and an svg with role="img" and no name
+   of its own was announced as an unlabelled image inside a labelled link. */
 export function BrandMark({ className = 'brand-logo' }) {
   return (
-    <svg className={className} viewBox="0 0 190 38" role="img">
+    <svg className={className} viewBox="0 0 190 38" aria-hidden="true" focusable="false">
       <use href="#logo-rusvpn" />
     </svg>
   )

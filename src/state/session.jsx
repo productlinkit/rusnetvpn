@@ -3,8 +3,12 @@ import { useBodyClass, useScrollLock } from '../hooks'
 import { registerApiHandlers } from '../shared/api/gates'
 import { getLocales } from '../shared/api/locales'
 import { setCurrencyCatalogue } from '../features/account/labels'
-import { beginCheckout } from '../features/billing/api'
 import { tokenStore, userCache } from '../shared/api/tokens'
+import { restoreFocus as restoreA11yFocus } from '../shared/a11y'
+
+/* where focus goes when the checkout's opener is gone — the buy button inside
+   the pricing card first, since that is what "close" most nearly returns to */
+const CHECKOUT_FALLBACK = ['#pricing .btn-red', '#pricing .seg button.on', '#acct-btn', '.burger']
 
 /**
  * The auth runtime — the API client, the wire schemas and zod behind them — is
@@ -75,6 +79,8 @@ export function SessionProvider({ children }) {
      in" — the plan to buy once signedIn() has somewhere to sign in to */
   const [pendingPlan, setPendingPlan] = useState(null)
   const [panel, setPanel] = useState(null) // null when the account page is closed
+  /* the plan under review in the checkout overlay — { code, name } — or null */
+  const [checkout, setCheckout] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [language, setLanguage] = useState('en')
   /** Set when the server says the account is suspended (ACC_001). */
@@ -82,14 +88,18 @@ export function SessionProvider({ children }) {
 
   /* the history and interceptor handlers below run outside React's render, so
      they read the live values through refs rather than a closure from mount */
-  const live = useRef({ user, authView, panel, language, pendingPlan })
-  live.current = { user, authView, panel, language, pendingPlan }
+  const live = useRef({ user, authView, panel, language, pendingPlan, checkout })
+  live.current = { user, authView, panel, language, pendingPlan, checkout }
 
   const lastFocus = useRef(null)
+  /* the checkout overlay keeps its own opener: it can open on top of a view
+     that already recorded one (sign-in hands over to it), and closing it must
+     not consume that view's restore target */
+  const coFocus = useRef(null)
 
   useBodyClass('menu-open', menuOpen)
   useBodyClass('is-auth', !!user)
-  useScrollLock(menuOpen || authView !== null || panel !== null)
+  useScrollLock(menuOpen || authView !== null || panel !== null || checkout !== null)
 
   const restoreFocus = () => {
     const el = lastFocus.current
@@ -156,6 +166,43 @@ export function SessionProvider({ children }) {
     history.replaceState({ rvAcct: key }, '', AC_HASH[key])
   }, [])
 
+  /* ---------- checkout ----------
+     Not a page of its own the way auth and the account are — the static page
+     gives it no address, and a cold link to "review a plan" means nothing
+     without a session to buy with — but it still takes a history entry with
+     the URL unchanged, so browser Back closes it the way Back leaves the auth
+     page, instead of leaving the site from under an open dialog. */
+  const showCheckout = useCallback((code, name = '', { silent } = {}) => {
+    if (!live.current.checkout) coFocus.current = document.activeElement
+    setCheckout({ code, name })
+    setMenuOpen(false)
+    if (!silent) history.pushState({ rvCo: code }, '', location.pathname + location.search)
+  }, [])
+
+  const closeCheckout = useCallback((silent) => {
+    setCheckout(null)
+    const el = coFocus.current
+    coFocus.current = null
+    /* after the fade has lifted inert — focus() on an inert element is a no-op */
+    window.setTimeout(() => restoreA11yFocus(el, CHECKOUT_FALLBACK), 0)
+    if (silent) return
+    if (history.state && history.state.rvCo) history.back()
+  }, [])
+
+  /* SUBS_003 / SUBS_006 — already subscribed. The account's subscription panel
+     takes the checkout's history entry rather than stacking on it: a
+     history.back() to close the overlay would land after the push and pop the
+     panel straight back off. */
+  const checkoutToAccount = useCallback((p = 'subscription') => {
+    const key = AC_HASH[p] ? p : 'overview'
+    setCheckout(null)
+    lastFocus.current = coFocus.current
+    coFocus.current = null
+    setPanel(key)
+    setMenuOpen(false)
+    history.replaceState({ rvAcct: key }, '', AC_HASH[key])
+  }, [])
+
   /* ---------- sign in / out ---------- */
 
   /**
@@ -166,49 +213,67 @@ export function SessionProvider({ children }) {
    *
    * If auth was opened from a pricing click, `pendingPlan` carries the plan
    * code through the whole sign-in/verify-email detour: instead of leaving
-   * the visitor to find and click the plan again, this starts the checkout
-   * they already asked for and sends the browser to Stripe. My Account is
-   * still opened first — it is where the checkout lands them back on success,
-   * and where they are left if the checkout call itself fails, so there is
-   * never a dead end.
+   * the visitor to find and click the plan again, the checkout overlay opens
+   * on the plan they already asked for — the same review step a signed-in
+   * buyer sees, so nobody is sent to Stripe without having seen the total and
+   * the renewal terms first. It takes over the auth page's history entry, so
+   * Back from it returns to the site rather than to the sign-up form.
    */
   const signedIn = useCallback((nextUser) => {
     setSuspended(null)
     setUser(nextUser)
     setAuthView(null)
-    restoreFocus()
 
     const planCode = live.current.pendingPlan
     setPendingPlan(null)
 
+    if (planCode) {
+      /* hand the auth page's opener (the buy button) to the overlay */
+      coFocus.current = lastFocus.current
+      lastFocus.current = null
+      setCheckout({ code: planCode, name: '' })
+      setMenuOpen(false)
+      const url = location.pathname + location.search
+      if (history.state && history.state.rvAuth) history.replaceState({ rvCo: planCode }, '', url)
+      else history.pushState({ rvCo: planCode }, '', url)
+      return
+    }
+
+    restoreFocus()
     lastFocus.current = document.activeElement
     setPanel('overview')
     setMenuOpen(false)
-    history.pushState({ rvAcct: 'overview' }, '', AC_HASH.overview)
-
-    if (planCode) {
-      beginCheckout(planCode).catch(() => {
-        // Left on My Account, which already opened above — SUBS_003 /
-        // SUBS_006 (already subscribed / already on this plan) land here
-        // correctly too, with no special-casing needed.
-      })
-    }
+    /* the auth page's entry is replaced, not stacked on: otherwise Back from
+       My Account walks into the verify-email screen of a sign-up that is over */
+    if (history.state && history.state.rvAuth) history.replaceState({ rvAcct: 'overview' }, '', AC_HASH.overview)
+    else history.pushState({ rvAcct: 'overview' }, '', AC_HASH.overview)
   }, [])
 
   /**
    * Every purchase CTA lands here — the pricing button and both "Try RusVPN
    * Now" buttons — so "buy" means the same thing wherever it is clicked.
    * Signed out, the plan rides through sign-up (see `pendingPlan`); signed in,
-   * the checkout starts.
+   * the checkout overlay opens on it — the review step before Stripe. The
+   * overlay owns the redirect, its busy state and its errors, so the promise
+   * resolves as soon as it is showing.
    */
+  /* The plan the pricing card is showing. A ref, not state: nothing renders
+     from it — the plan-less "Get RusVPN" buttons read it at the moment they
+     are clicked, so they buy what the visitor last looked at. */
+  const selectedPlan = useRef(null)
+  const selectPlan = useCallback((code, name) => {
+    selectedPlan.current = code ? { code, name } : null
+  }, [])
+
   const openCheckout = useCallback((planCode, planName) => {
     if (!planCode) return Promise.resolve()
     if (!live.current.user) {
       openAuth('up', undefined, undefined, planCode)
       return Promise.resolve()
     }
-    return beginCheckout(planCode, planName)
-  }, [openAuth])
+    showCheckout(planCode, planName)
+    return Promise.resolve()
+  }, [openAuth, showCheckout])
 
   /**
    * Clears the local session. `remote` tells the server too — skipped when the
@@ -218,6 +283,7 @@ export function SessionProvider({ children }) {
   const signOut = useCallback(
     async ({ remote = true } = {}) => {
       setPanel(null)
+      setCheckout(null)
       setUser(null)
       if (!remote) {
         tokenStore.clear()
@@ -260,10 +326,12 @@ export function SessionProvider({ children }) {
         tokenStore.clear()
         setUser(null)
         setPanel(null)
+        setCheckout(null)
       },
       onSuspended: (payload) => {
         setSuspended(payload ?? {})
         setPanel(null)
+        setCheckout(null)
         /* the account page is the one surface a suspended user cannot use, and
            the auth page is where the message has somewhere to render */
         openAuth('in')
@@ -300,6 +368,15 @@ export function SessionProvider({ children }) {
   useEffect(() => {
     const onPop = () => {
       const s = history.state
+      if (s && s.rvCo) {
+        if (live.current.authView) closeAuth(true)
+        if (live.current.panel) closeAccount(true)
+        /* forward onto a checkout entry: only meaningful while signed in */
+        if (live.current.user) showCheckout(s.rvCo, '', { silent: true })
+        return
+      }
+      if (live.current.checkout) closeCheckout(true)
+
       if (s && s.rvAuth) {
         openAuth(s.rvAuth, null, true)
         return
@@ -314,7 +391,7 @@ export function SessionProvider({ children }) {
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [openAuth, closeAuth, openAccount, closeAccount])
+  }, [openAuth, closeAuth, openAccount, closeAccount, showCheckout, closeCheckout])
 
   /* ---------- deep links ----------
      Auth views open cold. Account URLs only mean something once you are signed
@@ -351,6 +428,11 @@ export function SessionProvider({ children }) {
       signedIn,
       signOut,
       openCheckout,
+      selectedPlan,
+      selectPlan,
+      checkout,
+      closeCheckout,
+      checkoutToAccount,
       suspended,
       dismissSuspended: () => setSuspended(null),
       language,
@@ -368,7 +450,7 @@ export function SessionProvider({ children }) {
       setMenuOpen,
     }),
     [
-      user, signedIn, signOut, openCheckout, suspended, language,
+      user, signedIn, signOut, openCheckout, selectPlan, checkout, closeCheckout, checkoutToAccount, suspended, language,
       authView, authEmail, openAuth, closeAuth, switchAuthView,
       panel, openAccount, closeAccount, gotoPanel,
       menuOpen,

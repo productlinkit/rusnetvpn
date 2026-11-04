@@ -13,7 +13,8 @@ import {
 import { CheckoutResult } from './account/CheckoutResult'
 import * as accountApi from '../features/account/api'
 import { useResource } from '../features/account/useResource'
-import { REDUCED_MOTION, useScrollToHash } from '../hooks'
+import { useScrollToHash } from '../hooks'
+import { AUTH_FALLBACK, reducedMotion, restoreFocus, setPageInert, tablistKeys, trapTab } from '../shared/a11y'
 import { useSession } from '../state/session'
 
 /* ==========================================================================
@@ -37,6 +38,7 @@ const TABS = [
   ['notifications', 'Notifications'],
   ['support', 'Support'],
 ]
+const IS_TAB = new Set(TABS.map(([k]) => k))
 
 /* the three routes Stripe can send the browser back to */
 const CHECKOUT_OUTCOME = {
@@ -53,6 +55,8 @@ export default function AccountPage({ onChat }) {
 
   const page = useRef(null)
   const tabs = useRef(null)
+  const section = useRef(null)
+  const opener = useRef(null)
   const scrollToHash = useScrollToHash()
 
   /* Nothing is fetched until the page is actually opened: a visitor who never
@@ -84,9 +88,42 @@ export default function AccountPage({ onChat }) {
     if (!open) return
     if (page.current) page.current.scrollTop = 0
     const chip = tabs.current?.querySelector('.ac-link.on')
-    chip?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: REDUCED_MOTION ? 'auto' : 'smooth' })
+    chip?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' })
     measure()
   }, [open, shown, measure])
+
+  /* ---------- opening and closing ----------
+     The same contract as the auth page: aria-modal backed by inert on every
+     sibling, Tab kept inside, and focus handed back to something that exists.
+     The account page is routinely opened from the account menu, which is
+     closed by the time you come back out — hence restoreFocus, not focus(). */
+  useEffect(() => {
+    if (!open) return
+    const el = page.current
+    opener.current = document.activeElement
+    setPageInert(el, true)
+    const trap = trapTab(el)
+    document.addEventListener('keydown', trap)
+    /* the panel that just appeared is where you are, so focus goes to it — its
+       heading is the first thing read, rather than the brand mark in the bar */
+    const t = setTimeout(() => section.current?.focus(), reducedMotion() ? 0 : 120)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('keydown', trap)
+      /* signing out, or buying from in here, can hand straight over to another
+         overlay — which then keeps the page inert and owns the focus */
+      const next = document.querySelector('.auth.is-open, .co.is-open')
+      setPageInert(next, !!next)
+      /* setPageInert clears every sibling, closed overlays included — and a
+         closed one that is still fading out is visible, so focusable */
+      for (const el of document.querySelectorAll('#auth:not(.is-open), #account:not(.is-open)')) el.inert = true
+      /* a tick later, so the signed-in / signed-out header has painted: the
+         fallback has to be picked from the nav as it now is, not as it was */
+      const target = opener.current
+      if (!next) setTimeout(() => restoreFocus(target, AUTH_FALLBACK), 0)
+      opener.current = null
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -157,9 +194,14 @@ export default function AccountPage({ onChat }) {
     }
   }
 
+  /* the checkout results are reached by a redirect, not a tab, so they are a
+     plain region rather than a tabpanel no tab controls */
+  const isTab = IS_TAB.has(shown)
+
   return (
     <div
       className={`account${open ? ' is-open' : ''}`}
+      id="account"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ac-title"
@@ -172,35 +214,56 @@ export default function AccountPage({ onChat }) {
           <BrandMark />
         </a>
         <button type="button" className="ac-back" onClick={() => closeAccount()}>
-          <Back />
+          <Back aria-hidden="true" focusable="false" />
           Back to site
         </button>
-        <span className="ava">{who.initial}</span>
+        <span className="ava" id="ac-ava" aria-hidden="true">{who.initial}</span>
       </div>
 
       <div className="ac-body wrap">
         <aside className="ac-nav">
           <div className="ac-me">
-            <span className="ava lg">{who.initial}</span>
-            <span className="who"><b>{who.local}</b><i>{who.email}</i></span>
+            <span className="ava lg" id="ac-ava2" aria-hidden="true">{who.initial}</span>
+            <span className="who"><b id="ac-name">{who.local}</b><i id="ac-mail">{who.email}</i></span>
           </div>
-          <div className="ac-tabs" ref={tabs} onScroll={measure}>
-            {TABS.map(([key, text]) => (
-              <button
-                key={key}
-                type="button"
-                className={`ac-link${key === shown ? ' on' : ''}`}
-                onClick={() => gotoPanel(key)}
-              >
-                {AC_ICONS[key]}
-                {text}
-                {key === 'devices' && deviceCount > 0 && <span className="pip" />}
-              </button>
-            ))}
+          {/* a tablist is one tab stop: Tab lands on the selected section,
+              the arrows move between the rest */}
+          <div
+            className="ac-tabs"
+            id="ac-tabs"
+            role="tablist"
+            aria-orientation="vertical"
+            aria-label="Account sections"
+            ref={tabs}
+            onScroll={measure}
+            onKeyDown={tablistKeys}
+          >
+            {TABS.map(([key, text]) => {
+              const on = key === shown
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  id={`actab-${key}`}
+                  className={`ac-link${on ? ' on' : ''}`}
+                  aria-selected={on}
+                  /* only one panel is in the DOM, so only its tab points at it */
+                  aria-controls={on ? `acp-${key}` : undefined}
+                  tabIndex={on || (!isTab && key === 'overview') ? 0 : -1}
+                  onClick={() => gotoPanel(key)}
+                >
+                  {AC_ICONS[key]}
+                  {text}
+                  {key === 'devices' && deviceCount > 0 && <span className="pip" id="ac-dev-pip" />}
+                </button>
+              )
+            })}
           </div>
           <button
             type="button"
             className="ac-link ac-out"
+            id="ac-out"
             onClick={() => {
               signOut()
               closeAccount()
@@ -210,13 +273,26 @@ export default function AccountPage({ onChat }) {
           </button>
         </aside>
 
-        <main className="ac-main">
+        {/* was a second <main>. Two main landmarks means "skip to main content"
+            has two destinations and a screen reader's landmark list has an
+            ambiguous entry, so the account view is a labelled region instead
+            (1.3.1). The page keeps exactly one <main>, up at #top. */}
+        <section className="ac-main" aria-label="Account settings">
           {/* one panel at a time; the key restarts the entry animation on
               every switch, which is what the .on class did before */}
-          <section className="ac-panel on" key={shown}>
+          <section
+            className="ac-panel on"
+            key={shown}
+            ref={section}
+            id={`acp-${shown}`}
+            data-p={shown}
+            role={isTab ? 'tabpanel' : 'region'}
+            aria-labelledby={isTab ? `actab-${shown}` : 'ac-title'}
+            tabIndex={-1}
+          >
             {body()}
           </section>
-        </main>
+        </section>
       </div>
     </div>
   )

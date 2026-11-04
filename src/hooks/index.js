@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { cssBezier, reducedMotion } from '../shared/a11y'
+import { getLocations } from '../features/servers/api'
 
 /* ==========================================================================
    HOOKS
@@ -15,9 +17,13 @@ export const canHover = () =>
   typeof window !== 'undefined' && window.matchMedia('(hover:hover) and (pointer:fine)').matches
 
 /* ---------- reveal on scroll ----------
-   One observer for the whole page rather than one per component. Elements
-   are found after mount, which is exactly when React has put them in the
-   document, so this behaves the same as the original inline script. */
+   One observer for the whole page rather than one per component.
+
+   Looking for `.up` once at mount is not enough: the server rows and the
+   pricing card only render after their API call answers, so they arrived
+   after the scan, were never observed, and sat at opacity 0 for good — a
+   section with a heading and nothing under it. A mutation observer hands
+   every `.up` that turns up later to the same intersection observer. */
 export function useReveal() {
   useEffect(() => {
     const io = new IntersectionObserver(
@@ -30,35 +36,87 @@ export function useReveal() {
       },
       { rootMargin: '0px 0px -12% 0px', threshold: 0.06 },
     )
-    document.querySelectorAll('.up').forEach((el) => io.observe(el))
-    return () => io.disconnect()
+    const watch = (root) => {
+      if (root.nodeType !== 1) return
+      if (root.matches('.up:not(.in)')) io.observe(root)
+      root.querySelectorAll('.up:not(.in)').forEach((el) => io.observe(el))
+    }
+    watch(document.body)
+    const mo = new MutationObserver((records) => {
+      records.forEach((r) => r.addedNodes.forEach(watch))
+    })
+    mo.observe(document.body, { childList: true, subtree: true })
+    return () => {
+      mo.disconnect()
+      io.disconnect()
+    }
   }, [])
 }
 
 /* ---------- count up ----------
-   Counts to `end` once the number scrolls into view, then never again. */
-export function useCountUp(end, decimals = 0) {
+   Counts to `end` once the number scrolls into view, then never again.
+
+   The curve is --ease-enter, read off the stylesheet and sampled, so a number
+   finding its value and a panel arriving on screen are the same gesture — change
+   the token and both move. Duration follows how far the number has to travel:
+   on a flat 1400ms the 6 for continents spent as long crossing six integers as
+   700 spent crossing seven hundred, so the small tile visibly stepped while the
+   large one blurred. `order` staggers a group 90ms apart, because four numbers
+   landing on one frame read as one element repainting, not four facts.
+
+   `end` may arrive late — the server and country totals wait on the API — so
+   nothing is observed until it is a real number, and the tile shows 0 until
+   then, exactly as the static page did before its script ran.
+
+   The final value is asserted by a timer, not left to the frame loop. rAF stops
+   in a backgrounded tab and was caught stalling outright on the static page,
+   leaving 429 under a heading that claims 700. The timer is the contract; the
+   animation is only how it looks on the way. */
+const COUNT_LEAD = 90
+let easeEnter = null
+export function useCountUp(end, { decimals = 0, order = 0 } = {}) {
   const ref = useRef(null)
   useEffect(() => {
     const el = ref.current
-    if (!el) return
-    if (REDUCED_MOTION) {
+    if (!el || !Number.isFinite(end)) return
+    if (reducedMotion()) {
       el.textContent = end.toFixed(decimals)
       return
     }
+    easeEnter ??= cssBezier('--ease-enter', [0.21, 0.78, 0.26, 1])
+    const dur = 700 + 260 * String(Math.abs(Math.round(end))).length
+    const lead = COUNT_LEAD * order
     let raf = 0
+    let timer = 0
+    let landed = false
+    const land = () => {
+      if (landed) return
+      landed = true
+      cancelAnimationFrame(raf)
+      el.textContent = end.toFixed(decimals)
+    }
     const io = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return
         io.unobserve(el)
         let t0 = null
         const step = (t) => {
-          if (!t0) t0 = t
-          const p = Math.min((t - t0) / 1400, 1)
-          el.textContent = (end * (1 - Math.pow(1 - p, 3))).toFixed(decimals)
-          if (p < 1) raf = requestAnimationFrame(step)
+          if (landed) return
+          if (t0 === null) t0 = t
+          const p = (t - t0 - lead) / dur
+          if (p < 0) {
+            raf = requestAnimationFrame(step) /* still in the stagger */
+            return
+          }
+          if (p >= 1) {
+            land()
+            return
+          }
+          el.textContent = (end * easeEnter(p)).toFixed(decimals)
+          raf = requestAnimationFrame(step)
         }
         raf = requestAnimationFrame(step)
+        timer = setTimeout(land, lead + dur + 120)
       },
       { threshold: 0.5 },
     )
@@ -66,9 +124,78 @@ export function useCountUp(end, decimals = 0) {
     return () => {
       io.disconnect()
       cancelAnimationFrame(raf)
+      clearTimeout(timer)
     }
-  }, [end, decimals])
+  }, [end, decimals, order])
   return ref
+}
+
+/* ---------- FACTS — one source for every number the page claims ----------
+   The static page typed "700+ servers / 90+ countries" by hand in nine places
+   while the counters were seeded separately; on a product sold on trust, two
+   numbers that disagree read as carelessness at best. There the region table
+   was the source. Here the fleet itself is: GET /servers/locations, the same
+   list the coverage section and the app's server picker render, summed once.
+
+   One request per page load, shared by every caller — the hero, the rail and
+   the bento all ask, and none of them should cost a round trip of its own.
+
+   Continents are the one count the API does not carry (a location has a
+   country, not a continent), so they come from the same list the marquee and
+   the Global Coverage tile print. */
+export const CONTINENTS = ['North America', 'South America', 'Europe', 'Asia', 'Africa', 'Oceania']
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
+
+let factsPromise = null
+const loadFacts = () =>
+  (factsPromise ??= getLocations()
+    .then((rows) => ({
+      servers: rows.reduce((n, r) => n + r.server_count, 0),
+      countries: new Set(rows.map((r) => r.country_code)).size,
+    }))
+    .catch((error) => {
+      /* forget the failure, so the next mount gets to try again */
+      factsPromise = null
+      throw error
+    }))
+
+export function useFacts() {
+  const [counts, setCounts] = useState(null)
+  useEffect(() => {
+    let alive = true
+    loadFacts()
+      .then((f) => alive && setCounts(f))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+  return {
+    servers: counts?.servers,
+    countries: counts?.countries,
+    continents: CONTINENTS.length,
+    continentsWord: NUMBER_WORDS[CONTINENTS.length] ?? String(CONTINENTS.length),
+  }
+}
+
+/* ---------- retire the placeholder once the real photo decodes ----------
+   A .media frame paints a labelled "no photo yet" plate under its <img>. Once
+   the image has real pixels the plate is hidden outright (.media.has-img), so
+   a transparent PNG or a slow decode never shows the label through it. Load
+   does not bubble, so this listens in the capture phase — one listener covers
+   every image, including the ones that render after an API call answers. */
+export function usePlaceholderRetire() {
+  useEffect(() => {
+    const settle = (img) => {
+      if (img.naturalWidth > 0) img.closest('.media')?.classList.add('has-img')
+    }
+    document.querySelectorAll('.media img').forEach((img) => img.complete && settle(img))
+    const onLoad = (e) => {
+      if (e.target instanceof HTMLImageElement) settle(e.target)
+    }
+    document.addEventListener('load', onLoad, true)
+    return () => document.removeEventListener('load', onLoad, true)
+  }, [])
 }
 
 /* ---------- header state + reading progress ----------
@@ -165,7 +292,7 @@ export function useMagnetic(enabled = true) {
   const ref = useRef(null)
   useEffect(() => {
     const el = ref.current
-    if (!el || !enabled || REDUCED_MOTION || !canHover()) return
+    if (!el || !enabled || reducedMotion() || !canHover()) return
     let raf = 0
     let x = 0
     let y = 0
@@ -217,7 +344,7 @@ export function useMedia(query) {
 export function useScrollToHash() {
   return useCallback((href) => {
     if (!href || href.charAt(0) !== '#') return
-    const behavior = REDUCED_MOTION ? 'auto' : 'smooth'
+    const behavior = reducedMotion() ? 'auto' : 'smooth'
     if (href === '#top') {
       window.scrollTo({ top: 0, behavior })
       return

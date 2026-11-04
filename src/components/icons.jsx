@@ -5,6 +5,19 @@
    rather than a sprite because most of them appear once or twice and carry
    their own stroke settings; the three that repeat everywhere — Arrow, Check
    and Plus — are the reason this file exists at all.
+
+   One weight, measured at the screen. These used to carry 1.5, 1.8, 1.9, 2
+   and 2.2, and even a single number would not have made them one set:
+   stroke-width is in viewBox units, so what reaches the screen is the
+   attribute times (rendered size / viewBox size), and the 16-unit icons drew
+   nearly twice as heavy as the 24-unit ones beside them. components.css sets
+   `svg[stroke-width]{stroke-width:1.45}` with vector-effect:non-scaling-stroke
+   on the children, which makes 1.45 the pixels drawn at every size on both
+   artboards. So every stroked icon here keeps a stroke-width on its <svg> —
+   that attribute is what the rule keys on — and all of them say 1.8, the
+   value the static page wrote, so the source no longer implies a difference
+   the screen does not show. Filled marks (social, store, Google) carry none
+   and are left alone.
    ========================================================================== */
 
 const stroke = {
@@ -16,55 +29,55 @@ const stroke = {
 
 /* the diagonal arrow inside every round button badge */
 export const Arrow = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.9" {...p}><path d="M4 12L12 4M6 4h6v6" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M4 12L12 4M6 4h6v6" /></svg>
 )
 
 /* the tick used by feature lists, pros, and the "done" screens */
 export const Check = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="2.2" {...p}><path d="M3 8.5l3.2 3.2L13 5" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M3 8.5l3.2 3.2L13 5" /></svg>
 )
 
 /* a slightly different tick — the one the language menu ships with */
 export const Tick = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="2.2" {...p}><path d="M3 8.5l3.5 3.5L13 5" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M3 8.5l3.5 3.5L13 5" /></svg>
 )
 
 export const Plus = (p) => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" {...p}><path d="M8 3v10M3 8h10" /></svg>
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" {...p}><path d="M8 3v10M3 8h10" /></svg>
 )
 
 export const Chevron = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.9" {...p}><path d="M4 6l4 4 4-4" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M4 6l4 4 4-4" /></svg>
 )
 
 export const ChevronRight = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="2" {...p}><path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M4 8h8M8.5 4.5L12 8l-3.5 3.5" /></svg>
 )
 
 export const Back = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.9" {...p}><path d="M12 8H4M7.5 4.5L4 8l3.5 3.5" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M12 8H4M7.5 4.5L4 8l3.5 3.5" /></svg>
 )
 
 export const Globe = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" {...p}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
     <circle cx="12" cy="12" r="9" />
     <path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z" />
   </svg>
 )
 
 export const Shield = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" {...p}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" {...p}>
     <path d="M12 3l7 3v5.5c0 4.3-3 8-7 9.5-4-1.5-7-5.2-7-9.5V6l7-3z" />
   </svg>
 )
 
 export const Bolt = (p) => (
-  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2" {...p}><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12L13 2z" /></svg>
+  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="1.8" {...p}><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12L13 2z" /></svg>
 )
 
 /* the "no photo yet" frame — a picture glyph over a hatched plate */
 export const PhotoGlyph = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...p}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
     <rect x="3" y="4" width="18" height="16" rx="3" />
     <circle cx="8.5" cy="9.5" r="1.6" />
     <path d="M4 17l4.5-4.5 3.5 3.5 3-2.5L20 18" />
@@ -73,13 +86,13 @@ export const PhotoGlyph = (p) => (
 
 /* the mark on the form-level error strip */
 export const Warn = (p) => (
-  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="1.9" {...p}>
+  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="1.8" {...p}>
     <circle cx="12" cy="12" r="9" /><path d="M12 7.5v5M12 16.2h.01" />
   </svg>
 )
 
 export const Download = (p) => (
-  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.9" {...p}><path d="M8 2v8M5 7.5L8 10.5l3-3M3 13.5h10" /></svg>
+  <svg viewBox="0 0 16 16" {...stroke} strokeWidth="1.8" {...p}><path d="M8 2v8M5 7.5L8 10.5l3-3M3 13.5h10" /></svg>
 )
 
 export const Eye = (p) => (
@@ -99,10 +112,10 @@ export const Google = (p) => (
 )
 
 export const Chat = (p) => (
-  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="1.9" {...p}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5.2A8 8 0 1 1 21 12z" /></svg>
+  <svg viewBox="0 0 24 24" {...stroke} strokeWidth="1.8" {...p}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5.2A8 8 0 1 1 21 12z" /></svg>
 )
 
-/* ---------- bento tile icons, keyed by TILES[].icon ---------- */
+/* ---------- bento tile icons, keyed by each tile's `icon` in Tech.jsx ---------- */
 const tileStroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
 export const TILE_ICONS = {

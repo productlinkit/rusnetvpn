@@ -13,7 +13,8 @@ import Apps from './sections/Apps'
 import Pricing from './sections/Pricing'
 import Faq from './sections/Faq'
 import Cta from './sections/Cta'
-import { useReveal } from './hooks'
+import Transparency from './sections/Transparency'
+import { usePlaceholderRetire, useReveal } from './hooks'
 import { SessionProvider, useSession } from './state/session'
 import { FeedbackProvider } from './components/Feedback'
 
@@ -30,6 +31,7 @@ import { FeedbackProvider } from './components/Feedback'
    validation stack — let alone a billing table — to do it. */
 const AuthPage = lazy(() => import('./components/AuthPage'))
 const AccountPage = lazy(() => import('./components/AccountPage'))
+const Checkout = lazy(() => import('./components/Checkout'))
 
 /**
  * Fetch those chunks while the browser is idle, so the first click on "Login"
@@ -55,17 +57,25 @@ function useWarmChunks(signedIn) {
 
 function Page() {
   useReveal()
+  usePlaceholderRetire()
   const { user } = useSession()
   useWarmChunks(!!user)
   const fab = useRef(null)
 
   return (
     <>
+      {/* first in the tab order, hidden until it has focus: 2.4.1 Bypass Blocks */}
+      <a href="#top" className="skip">Skip to main content</a>
       <LogoSprite />
       <Header />
       <MobileSheet />
 
-      <main id="top">
+      {/* tabIndex -1 so the skip link can actually land here. Without it the
+          fragment scrolled the page but focus fell back to <body>, so the next
+          Tab returned to the header — the link announced itself, moved the
+          view, and skipped nothing. It is also the last-resort target of
+          restoreFocus when an overlay's opener has gone. */}
+      <main id="top" tabIndex={-1}>
         <Hero />
         <Marquee />
         <Why />
@@ -77,6 +87,7 @@ function Page() {
         <Cta />
       </main>
 
+      <Transparency />
       <Footer />
       <Fab ref={fab} />
       {/* no fallback: the overlay is invisible until it is opened, and a
@@ -85,6 +96,7 @@ function Page() {
       <Suspense fallback={null}>
         <AuthPage />
         <AccountPage onChat={() => fab.current?.open()} />
+        <Checkout />
       </Suspense>
     </>
   )

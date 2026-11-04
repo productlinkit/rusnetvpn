@@ -151,26 +151,59 @@ function transactions(s) {
 
 /* ---------- public content ---------- */
 
-const LOCATIONS = () => [
-  ['us', 'United States', 'New York', '🇺🇸', 48, true, 34],
-  ['de', 'Germany', 'Frankfurt', '🇩🇪', 32, true, 21],
-  ['nl', 'Netherlands', 'Amsterdam', '🇳🇱', 24, false, 18],
-  ['gb', 'United Kingdom', 'London', '🇬🇧', 28, false, 41],
-  ['sg', 'Singapore', 'Singapore', '🇸🇬', 20, true, 27],
-  ['jp', 'Japan', 'Tokyo', '🇯🇵', 18, false, 39],
-  ['br', 'Brazil', 'São Paulo', '🇧🇷', 12, false, 52],
-  ['ae', 'United Arab Emirates', 'Dubai', '🇦🇪', 8, false, 30],
-].map(([cc, name, city, flag, n, free, load], i) => ({
-  id: `loc-${i}`, country_code: cc, country_name: name, city, flag_emoji: flag, server_count: n, has_free: free, best_load: load,
-}))
+/* The fleet the static page's region rows describe — 32 countries and 240
+   servers in Europe, down to 6 and 35 in Oceania; 90 and 700 in all — laid out
+   per country, which is the shape GET /servers/locations really has. The
+   coverage section groups it back into those six rows, so the mock and the
+   design say the same thing. Servers are spread evenly inside a region (the
+   remainder goes to the first few), the first country in each is free-tier,
+   and the load is a fixed scatter so screenshots do not change between runs. */
+const FLEET = [
+  ['de nl gb fr se ch fi no dk pl cz at be ie es it pt gr ro hu bg hr rs sk si ee lv lt lu is md ru', 240],
+  ['us ca mx cr pa', 150],
+  ['sg jp kr hk tw in id my th vn ph ae il tr kz ge am az pk bd kh', 140],
+  ['br ar cl co pe ec uy py bo ve gy sr', 80],
+  ['za eg ng ke ma tn gh dz sn tz ug et ci ao', 55],
+  ['au nz fj pg nc pf', 35],
+]
+const flag = (cc) => String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
 
+const LOCATIONS = () => {
+  const names = new Intl.DisplayNames(['en'], { type: 'region' })
+  return FLEET.flatMap(([list, total]) => {
+    const codes = list.split(' ')
+    const each = Math.floor(total / codes.length)
+    const extra = total % codes.length
+    return codes.map((cc, i) => ({ cc, n: each + (i < extra ? 1 : 0), free: i === 0 }))
+  }).map(({ cc, n, free }, i) => ({
+    id: `loc-${i}`,
+    country_code: cc,
+    country_name: names.of(cc.toUpperCase()) ?? cc.toUpperCase(),
+    city: null,
+    flag_emoji: flag(cc),
+    server_count: n,
+    has_free: free,
+    best_load: 12 + ((i * 37) % 51),
+  }))
+}
+
+/* The static page's thirteen questions, word for word. Question 14 (the
+   usability research one) is gone with the section it pointed at. */
 const FAQS = () => [
-  ['Is RusVPN free to use?', 'Yes. The free plan connects to five locations with a daily allowance. Premium unlocks every server, full speed and no limits.'],
-  ['Do you keep logs?', 'No. We do not record what you browse, which servers you use or when — there is nothing to hand over.'],
-  ['How many devices can I use?', 'One device on a single plan, five at once on a multi-device plan.'],
-  ['Can I cancel at any time?', 'Yes. Turn auto-renewal off in My Account and your plan runs until the end of the period you paid for.'],
-  ['Which payment methods do you accept?', 'Visa, Mastercard, PayPal, Apple Pay and Google Pay, processed securely by Stripe.'],
-].map(([question, answer], i) => ({ id: `faq-${i}`, category: 'general', question, answer, sort_order: i }))
+  ['Privacy', 'Do you keep any logs?', 'RusVPN is committed to independent, no-log auditing — that audit is in progress. We don’t store your browsing activity, traffic logs, DNS queries, or connection history tied to your account. We are a no-log VPN meaning that we don’t store any of your traffic logs.'],
+  ['Global Coverage', 'Where are your servers?', '700+ servers worldwide, spanning North America, South America, Europe, Asia, Africa, and Oceania. With 700+ servers in 90+ countries, you can easily access all of your favorite content – shows, music, apps, and more – regardless of where you live.'],
+  ['Ownership', 'Who owns and runs RusVPN?', 'RusVPN is run and owned by local people that care about internet privacy and security in Russia. No shadowy megacorporation abroad involvement. Owned and operated in-house, following strict Russian security standards.'],
+  ['Performance', 'Will RusVPN slow my connection down?', 'Advanced hardware ensures fast speeds and smooth streaming. Automatic server switching prevents slowdowns for uninterrupted service, and we offer the most advanced VPN protocols for the fastest and most secure connection.'],
+  ['Streaming', 'Does it work with streaming services?', 'We have optimized streaming servers around the globe, allowing you to get the most from your existing streaming subscription. Access your favorite content across our global VPN network, regardless of where you live.'],
+  ['Subscription', 'Can I cancel auto-renewal?', 'Yes. Turn off auto-renewal from My Account and you will keep access until the end of the paid period, and your card will not be charged again. Every invoice sits under transaction history, alongside manage payment & invoices.'],
+  ['Billing', 'Can I get a refund?', 'Ask within 30 days of the charge and we refund it in full, no questions about why. Write from the email on the account, or open Billing & invoices in My Account and use the receipt for the payment you want back. Money goes back to the card or wallet it came from and usually lands within five working days.'],
+  ['Devices', 'How many devices can I use at once?', 'Five at a time, on any mix of Windows, macOS, Android, iOS and Linux. There is no per-platform licence — one login covers all of them. When you need a sixth, open Devices in My Account and sign one out; the slot frees up straight away.'],
+  ['Setup', 'How do I get started?', 'Create an account, download the app for your platform, sign in with the same email, and press connect. The app picks the fastest server near you on its own; the country list is there when you want to choose for yourself. No configuration files, no manual keys.'],
+  ['Protocols', 'Which VPN protocols do you support?', 'WireGuard by default, because it is the fastest to connect and the lightest on battery, with OpenVPN over UDP and TCP available for networks that block it. Automatic is the right setting for almost everyone — the app falls back on its own when a network refuses the first choice.'],
+  ['Payment', 'How can I pay?', 'Visa, Mastercard, PayPal, Apple Pay and Google Pay. We never see or store your card number. The charge shows on your statement under our billing descriptor, and every payment produces a downloadable invoice in My Account.'],
+  ['Privacy', 'What happens if a server is seized?', 'Our servers run from RAM and keep no persistent disk, so a machine that is powered down keeps nothing. There are no connection logs, no traffic logs and no DNS logs to hand over — a seized server holds the software that routes traffic and nothing that identifies who sent it.'],
+  ['Privacy', 'Has the no-log claim been independently audited?', 'Not yet, and we would rather say so than imply otherwise. We run RusVPN as a no-log service — no traffic logs, no DNS query logs, no connection timestamps tied to an account — and we have committed to having that claim examined by an outside firm instead of asking you to take our word for it. No auditor has been appointed yet and no report exists, so we do not describe the service as audited anywhere on this site. The scope to be assessed and the current state of the work are set out under “Independent audit — status”, linked in the footer, and that is where the report will be published in full when there is one, including any findings against us.'],
+].map(([category, question, answer], i) => ({ id: `faq-${i}`, category, question, answer, sort_order: i }))
 
 /* ---------- routing ---------- */
 

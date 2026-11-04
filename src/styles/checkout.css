@@ -72,3 +72,12 @@
   .co-card{margin:0;width:100%;min-height:100%;border-radius:0;}
   .co-pair{grid-template-columns:1fr;}
 }
+
+/* React port: the buyer is always signed in before this overlay opens, so the
+   receipt address is shown rather than asked for — a read-only value in the
+   field's place, not a disabled input pretending to be editable. */
+.fld .co-who-v{
+  display:flex;align-items:center;min-height:52px;padding:14px 16px;border-radius:14px;
+  background:var(--paper);border:1px solid var(--line-2);color:var(--ink);font-size:var(--fs-300);font-weight:600;
+  overflow-wrap:anywhere;
+}
