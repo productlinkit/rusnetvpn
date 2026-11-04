@@ -2,6 +2,7 @@ import { env } from '../../config/env'
 import { successEnvelopeSchema } from './envelope'
 import { ApiError, fromResponse, toApiError } from './errors'
 import { gates } from './gates'
+import { mockSend } from './mock'
 import { tokenStore } from './tokens'
 
 /* ==========================================================================
@@ -68,7 +69,13 @@ async function readBody(response) {
   }
 }
 
+/* dev-only stand-in for the backend; the constant folds to false in a
+   production build, so the mock is tree-shaken out of it */
+const MOCK = import.meta.env.DEV && import.meta.env.VITE_MOCK_API === 'true'
+
 async function send(path, { method = 'GET', body, signal } = {}) {
+  if (MOCK) return mockSend(path, { method, body })
+
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), env.requestTimeoutMs)
   /* a caller-supplied signal (unmount, navigation) has to be able to cancel
