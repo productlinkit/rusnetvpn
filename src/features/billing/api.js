@@ -62,3 +62,52 @@ export const getPlans = () => api.get('/plans', plansResponseSchema)
  */
 export const startCheckout = (planCode) =>
   api.post('/subscriptions/checkout', { plan_code: planCode, platform: 'web' }, checkoutResponseSchema)
+
+/* ==========================================================================
+   THE LAST CHECKOUT
+
+   Stripe sends the browser back with nothing but the route — no order number,
+   no amount, no plan. The result page needs all three: to print a receipt, to
+   match the order against GET /transactions while it waits on the webhook,
+   and to offer "try again" on the same plan after a failed card.
+
+   So the session is written down on the way out. sessionStorage, not local:
+   it belongs to this tab's round trip to Stripe and nothing after it. Every
+   access is guarded — a private window or blocked site data must cost the
+   receipt, never the redirect.
+   ========================================================================== */
+
+const LAST_CHECKOUT = 'rv.checkout'
+
+export function lastCheckout() {
+  try {
+    return JSON.parse(sessionStorage.getItem(LAST_CHECKOUT)) ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Start a checkout and leave for Stripe. `planName` is optional — the
+ * post-sign-in path only has the code — and only feeds the receipt.
+ */
+export async function beginCheckout(planCode, planName = '') {
+  const session = await startCheckout(planCode)
+  try {
+    sessionStorage.setItem(
+      LAST_CHECKOUT,
+      JSON.stringify({
+        plan_code: planCode,
+        plan_name: planName,
+        order_no: session.order_no,
+        amount: session.amount,
+        currency: session.currency,
+        started_at: new Date().toISOString(),
+      }),
+    )
+  } catch {
+    // no storage: the result page just prints less
+  }
+  window.location.href = session.checkout_url
+  return session
+}

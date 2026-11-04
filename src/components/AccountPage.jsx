@@ -3,7 +3,6 @@ import { BrandMark } from './Brand'
 import { AC_ICONS, Back } from './icons'
 import {
   Billing,
-  CheckoutSuccess,
   Devices,
   Notifications,
   Overview,
@@ -11,6 +10,7 @@ import {
   Subscription,
   Support,
 } from './account/panels'
+import { CheckoutResult } from './account/CheckoutResult'
 import * as accountApi from '../features/account/api'
 import { useResource } from '../features/account/useResource'
 import { REDUCED_MOTION, useScrollToHash } from '../hooks'
@@ -37,6 +37,13 @@ const TABS = [
   ['notifications', 'Notifications'],
   ['support', 'Support'],
 ]
+
+/* the three routes Stripe can send the browser back to */
+const CHECKOUT_OUTCOME = {
+  checkoutSuccess: 'success',
+  checkoutPending: 'pending',
+  checkoutFailed: 'failed',
+}
 
 export default function AccountPage({ onChat }) {
   const { user, panel, closeAccount, gotoPanel, signOut } = useSession()
@@ -105,7 +112,18 @@ export default function AccountPage({ onChat }) {
   const body = () => {
     switch (shown) {
       case 'checkoutSuccess':
-        return <CheckoutSuccess subscription={subscription} onDone={() => gotoPanel('overview')} />
+      case 'checkoutPending':
+      case 'checkoutFailed':
+        return (
+          <CheckoutResult
+            outcome={CHECKOUT_OUTCOME[shown]}
+            subscription={subscription}
+            onDone={() => gotoPanel('overview')}
+            onSupport={() => gotoPanel('support')}
+            onPlans={() => closeAndGo('#pricing')}
+            onApps={() => closeAndGo('#apps')}
+          />
+        )
       case 'subscription':
         return <Subscription subscription={subscription} onClose={closeAndGo} />
       case 'billing':

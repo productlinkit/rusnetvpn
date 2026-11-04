@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Btn } from '../components/ui'
 import { Check, Warn } from '../components/icons'
 import { Loader } from '../components/account/parts'
-import { getPlans, startCheckout } from '../features/billing/api'
+import { beginCheckout, getPlans } from '../features/billing/api'
 import { useResource } from '../features/account/useResource'
 import { label, money, moneyParts, textOf } from '../features/account/labels'
 import { useSession } from '../state/session'
@@ -95,7 +95,7 @@ export default function Pricing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plans.data])
 
-  const buy = async (code) => {
+  const buy = async (code, name) => {
     if (!code || busyCode) return
     if (!user) {
       openAuth('up', undefined, undefined, code)
@@ -104,8 +104,7 @@ export default function Pricing() {
     setBuyError(null)
     setBusyCode(code)
     try {
-      const session = await startCheckout(code)
-      window.location.href = session.checkout_url
+      await beginCheckout(code, name)
     } catch (error) {
       setBusyCode(null)
       // Already subscribed, or already on this plan: not a failure, just
@@ -176,7 +175,7 @@ export default function Pricing() {
                 style={{ marginTop: 34, opacity: busy ? 0.55 : undefined, pointerEvents: busy ? 'none' : undefined }}
                 onClick={(e) => {
                   e.preventDefault()
-                  buy(p.code)
+                  buy(p.code, p.tab)
                 }}
               >
                 {busy ? 'Redirecting…' : p.cta}
@@ -228,7 +227,7 @@ export default function Pricing() {
                   style={{ marginTop: 26, opacity: busy ? 0.55 : undefined, pointerEvents: busy ? 'none' : undefined }}
                   onClick={(e) => {
                     e.preventDefault()
-                    buy(p.code)
+                    buy(p.code, p.tab)
                   }}
                 >
                   Try RusVPN Now

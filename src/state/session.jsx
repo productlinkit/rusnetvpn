@@ -3,7 +3,7 @@ import { useBodyClass, useScrollLock } from '../hooks'
 import { registerApiHandlers } from '../shared/api/gates'
 import { getLocales } from '../shared/api/locales'
 import { setCurrencyCatalogue } from '../features/account/labels'
-import { startCheckout } from '../features/billing/api'
+import { beginCheckout } from '../features/billing/api'
 import { tokenStore, userCache } from '../shared/api/tokens'
 
 /**
@@ -49,6 +49,8 @@ export const AUTH_HASH = {
 export const AC_HASH = {
   overview: '#account',
   checkoutSuccess: '#checkout-success',
+  checkoutPending: '#checkout-pending',
+  checkoutFailed: '#checkout-failed',
   subscription: '#subscription',
   billing: '#billing',
   devices: '#devices',
@@ -185,15 +187,11 @@ export function SessionProvider({ children }) {
     history.pushState({ rvAcct: 'overview' }, '', AC_HASH.overview)
 
     if (planCode) {
-      startCheckout(planCode)
-        .then((session) => {
-          window.location.href = session.checkout_url
-        })
-        .catch(() => {
-          // Left on My Account, which already opened above — SUBS_003 /
-          // SUBS_006 (already subscribed / already on this plan) land here
-          // correctly too, with no special-casing needed.
-        })
+      beginCheckout(planCode).catch(() => {
+        // Left on My Account, which already opened above — SUBS_003 /
+        // SUBS_006 (already subscribed / already on this plan) land here
+        // correctly too, with no special-casing needed.
+      })
     }
   }, [])
 
@@ -317,6 +315,13 @@ export function SessionProvider({ children }) {
       return
     }
     const acct = Object.keys(AC_HASH).find((p) => AC_HASH[p] === hash)
+    /* dev-only: ?preview= shows a checkout result screen with a stand-in
+       account, so the three designs can be looked at without a backend */
+    if (import.meta.env.DEV && acct?.startsWith('checkout') && new URLSearchParams(location.search).has('preview')) {
+      setUser((u) => u ?? { local: 'preview', email: 'preview@rusvpn.dev', initial: 'P' })
+      setPanel(acct)
+      return
+    }
     if (acct) {
       if (tokenStore.access()) openAccount(acct, true)
       else openAuth('in', null, true)

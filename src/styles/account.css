@@ -23,6 +23,85 @@
 .ac-body{display:grid;grid-template-columns:minmax(0,268px) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start;padding-block:clamp(26px,4vw,48px) 80px;}
 .ac-nav,.ac-main{min-width:0;}
 
+/* ---------- checkout result ----------
+   One card, toned by outcome. The hue lives in two variables so the badge, the
+   glow behind it and the progress step all move together. */
+.co{
+  --co:#12B76A;--co-tint:#E9F9F0;
+  max-width:640px;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);
+  padding:clamp(24px,3.4vw,44px);position:relative;overflow:hidden;
+}
+.co-wait{--co:#F79009;--co-tint:#FFF4E5;}
+.co-bad{--co:var(--red);--co-tint:var(--red-tint);}
+.co::before{
+  content:"";position:absolute;left:50%;top:-180px;width:520px;height:360px;transform:translateX(-50%);
+  background:radial-gradient(closest-side,var(--co-tint),transparent);pointer-events:none;
+}
+.co > *{position:relative;}
+
+.co-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;}
+.co-hero h2{font-size:clamp(24px,3vw,34px);line-height:1.15;text-wrap:balance;}
+.co-hero p{color:var(--body);font-size:15px;max-width:48ch;text-wrap:pretty;}
+
+.co-badge{
+  width:76px;height:76px;border-radius:50%;display:grid;place-items:center;margin-bottom:4px;
+  background:var(--co);color:#fff;box-shadow:0 0 0 10px var(--co-tint),0 22px 40px -18px var(--co);
+}
+.co-badge svg{width:34px;height:34px;}
+.co-badge.good svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:coDraw .5s .25s var(--ease) forwards;}
+.co-badge.good{animation:coPop .55s var(--ease) both;}
+.co-badge.bad{animation:coShake .5s .15s var(--ease) both;}
+/* pending: the badge is a ring with a turning arc, the clock hands inside */
+.co-badge.wait{background:var(--co-tint);color:var(--co);box-shadow:none;position:relative;}
+.co-badge.wait::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:3px solid rgba(247,144,9,.18);border-top-color:var(--co);animation:coSpin 1.1s linear infinite;
+}
+@keyframes coDraw{to{stroke-dashoffset:0;}}
+@keyframes coPop{0%{transform:scale(.6);opacity:0;}60%{transform:scale(1.06);opacity:1;}100%{transform:none;}}
+@keyframes coShake{0%,100%{transform:none;}25%{transform:translateX(-5px);}50%{transform:translateX(4px);}75%{transform:translateX(-2px);}}
+@keyframes coSpin{to{transform:rotate(360deg);}}
+
+.co-steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:28px;}
+.co-steps li{display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;font-size:12.5px;color:var(--muted);position:relative;}
+/* the connector runs from this dot to the next one */
+.co-steps li:not(:last-child)::after{content:"";position:absolute;top:14px;left:calc(50% + 20px);right:calc(-50% + 20px);height:2px;border-radius:2px;background:var(--line);}
+.co-steps li.done::after{background:var(--co);}
+.co-steps i{
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12.5px;
+  background:var(--paper-2);color:var(--muted);
+}
+.co-steps i svg{width:13px;height:13px;}
+.co-steps .done{color:var(--body);}
+.co-steps .done i{background:var(--co);color:#fff;}
+.co-steps .now{color:var(--ink);font-weight:600;}
+.co-steps .now i{background:var(--co-tint);color:var(--co);box-shadow:0 0 0 2px var(--co);animation:coPulse 1.6s var(--ease) infinite;}
+@keyframes coPulse{50%{box-shadow:0 0 0 5px var(--co-tint);}}
+
+/* a receipt: dashed tear line above, label left, value right */
+.co-sum{margin-top:28px;padding-top:22px;border-top:1.5px dashed var(--line-3);display:grid;gap:12px;}
+.co-sum div{display:flex;justify-content:space-between;gap:16px;font-size:14px;}
+.co-sum dt{color:var(--muted);}
+.co-sum dd{color:var(--ink);font-weight:600;text-align:right;overflow-wrap:anywhere;}
+
+.co-why{margin-top:22px;padding:16px 18px;border-radius:var(--r-sm);background:var(--paper);font-size:13.5px;color:var(--body);}
+.co-why b{display:block;color:var(--ink);font-size:13px;margin-bottom:6px;}
+.co-why ul{padding-left:18px;display:grid;gap:4px;}
+
+.co-actions{justify-content:center;margin-top:28px;}
+.co-actions .btn svg{width:16px;height:16px;}
+
+@media(prefers-reduced-motion:reduce){
+  .co-badge,.co-badge svg path,.co-steps .now i{animation:none !important;stroke-dashoffset:0;}
+  .co-badge.wait::after{animation-duration:3s;}
+}
+@media(max-width:560px){
+  .co-steps{gap:4px;}
+  .co-steps li{font-size:11.5px;}
+  .co-badge{width:64px;height:64px;}
+  .co-badge svg{width:28px;height:28px;}
+}
+
 /* ---------- left rail ---------- */
 .ac-nav{position:sticky;top:96px;display:flex;flex-direction:column;gap:6px;}
 .ac-me{display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--line-2);margin-bottom:10px;}
@@ -98,6 +177,7 @@
 .ac-tag.good{background:#E9F9F0;color:#0B8A4E;}
 .ac-tag.warn{background:#FFF4E5;color:#B54708;}
 .ac-tag.off{background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);}
+.ac-tag.bad{background:#FFF0F0;color:var(--red-deep);}
 
 /* invoices */
 .ac-table{width:100%;border-collapse:collapse;font-size:14px;}
