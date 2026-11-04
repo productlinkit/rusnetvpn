@@ -196,6 +196,21 @@ export function SessionProvider({ children }) {
   }, [])
 
   /**
+   * Every purchase CTA lands here — the pricing button and both "Try RusVPN
+   * Now" buttons — so "buy" means the same thing wherever it is clicked.
+   * Signed out, the plan rides through sign-up (see `pendingPlan`); signed in,
+   * the checkout starts.
+   */
+  const openCheckout = useCallback((planCode, planName) => {
+    if (!planCode) return Promise.resolve()
+    if (!live.current.user) {
+      openAuth('up', undefined, undefined, planCode)
+      return Promise.resolve()
+    }
+    return beginCheckout(planCode, planName)
+  }, [openAuth])
+
+  /**
    * Clears the local session. `remote` tells the server too — skipped when the
    * server is the one that ended it, since the token is already dead and the
    * call would only earn another 401.
@@ -335,6 +350,7 @@ export function SessionProvider({ children }) {
       user,
       signedIn,
       signOut,
+      openCheckout,
       suspended,
       dismissSuspended: () => setSuspended(null),
       language,
@@ -352,7 +368,7 @@ export function SessionProvider({ children }) {
       setMenuOpen,
     }),
     [
-      user, signedIn, signOut, suspended, language,
+      user, signedIn, signOut, openCheckout, suspended, language,
       authView, authEmail, openAuth, closeAuth, switchAuthView,
       panel, openAccount, closeAccount, gotoPanel,
       menuOpen,
