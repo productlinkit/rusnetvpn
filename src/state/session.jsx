@@ -52,15 +52,20 @@ export const AUTH_HASH = {
 
 export const AC_HASH = {
   overview: '#account',
-  checkoutSuccess: '#checkout-success',
-  checkoutPending: '#checkout-pending',
-  checkoutFailed: '#checkout-failed',
   subscription: '#subscription',
   billing: '#billing',
   devices: '#devices',
   security: '#security',
   notifications: '#notifications',
   support: '#support',
+}
+
+/* The three routes Stripe can send the browser back to. Not account panels:
+   the outcome is shown in the checkout overlay, over the site. */
+export const CHECKOUT_RESULT_HASH = {
+  success: '#checkout-success',
+  pending: '#checkout-pending',
+  failed: '#checkout-failed',
 }
 
 const SessionContext = createContext(null)
@@ -179,13 +184,36 @@ export function SessionProvider({ children }) {
     if (!silent) history.pushState({ rvCo: code }, '', location.pathname + location.search)
   }, [])
 
+  /* Where Stripe sends the browser back to. The payment's outcome is shown in
+     the checkout itself — the box the visitor paid from, as the single-file
+     page did — rather than on a different page that happens to know about
+     it. It takes over the entry Stripe returned to instead of pushing one:
+     Back should not land on a result that has already been read. */
+  const showCheckoutResult = useCallback((outcome) => {
+    coFocus.current = null
+    setCheckout({ result: outcome })
+    setMenuOpen(false)
+    history.replaceState({ rvCoResult: outcome }, '', location.href)
+  }, [])
+
   const closeCheckout = useCallback((silent) => {
+    const wasResult = !!live.current.checkout?.result
     setCheckout(null)
     const el = coFocus.current
     coFocus.current = null
     /* after the fade has lifted inert — focus() on an inert element is a no-op */
     window.setTimeout(() => restoreA11yFocus(el, CHECKOUT_FALLBACK), 0)
     if (silent) return
+    /* a result owns no entry of its own, only the address Stripe returned
+       to — clear that, so a reload does not show the receipt again */
+    if (wasResult) {
+      const q = new URLSearchParams(location.search)
+      q.delete('mock-checkout')
+      q.delete('preview')
+      const search = q.toString()
+      history.replaceState(null, '', location.pathname + (search ? `?${search}` : ''))
+      return
+    }
     if (history.state && history.state.rvCo) history.back()
   }, [])
 
@@ -406,14 +434,17 @@ export function SessionProvider({ children }) {
       openAuth(view === 'otp' || view === 'newpw' ? 'in' : view, null, true)
       return
     }
-    const acct = Object.keys(AC_HASH).find((p) => AC_HASH[p] === hash)
-    /* dev-only: ?preview= shows a checkout result screen with a stand-in
-       account, so the three designs can be looked at without a backend */
-    if (import.meta.env.DEV && acct?.startsWith('checkout') && new URLSearchParams(location.search).has('preview')) {
-      setUser((u) => u ?? { local: 'preview', email: 'preview@rusvpn.dev', initial: 'P' })
-      setPanel(acct)
+    const outcome = Object.keys(CHECKOUT_RESULT_HASH).find((o) => CHECKOUT_RESULT_HASH[o] === hash)
+    if (outcome) {
+      /* dev-only: ?preview= shows a result with a stand-in account, so the
+         three designs can be looked at without a backend */
+      const preview = import.meta.env.DEV && new URLSearchParams(location.search).has('preview')
+      if (preview) setUser((u) => u ?? { local: 'preview', email: 'preview@rusvpn.dev', initial: 'P' })
+      if (preview || tokenStore.access()) showCheckoutResult(outcome)
+      else openAuth('in', null, true)
       return
     }
+    const acct = Object.keys(AC_HASH).find((p) => AC_HASH[p] === hash)
     if (acct) {
       if (tokenStore.access()) openAccount(acct, true)
       else openAuth('in', null, true)

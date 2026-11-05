@@ -105,6 +105,7 @@
 .ac-tag.good{background:var(--green-tint);color:var(--green-text);}
 .ac-tag.warn{background:var(--amber-tint);color:var(--amber-text);}
 .ac-tag.off{background:rgba(255,255,255,.12);color:rgba(255,255,255,.86);}
+.ac-tag.bad{background:var(--red-tint);color:var(--red-text);}
 
 /* invoices */
 .ac-table{width:100%;border-collapse:collapse;font-size:var(--fs-300);}

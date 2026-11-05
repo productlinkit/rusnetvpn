@@ -9,6 +9,9 @@ import { date, money, textOf } from '../../features/account/labels'
 /* ==========================================================================
    CHECKOUT RESULT — where Stripe sends the browser back to
 
+   Rendered inside the checkout overlay, the same box the payment was started
+   from, so the visitor reads the outcome where they left it.
+
    Three routes, four screens:
 
      #checkout-success  → success, or pending while the webhook catches up
@@ -73,7 +76,7 @@ const REASONS = [
 /* the three beats of a payment, as the pending screen tracks them */
 const STEPS = ['Payment submitted', 'Confirming with the provider', 'Activating your plan']
 
-export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSupport, onApps }) {
+export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSupport, onApps, titleId = 'co-title' }) {
   const [order] = useState(() => (PREVIEW ? DEMO.order : lastCheckout()))
   /* the order's own row in /transactions — it can say "failed" before the
      subscription has anything to say at all */
@@ -138,7 +141,7 @@ export function CheckoutResult({ outcome, subscription, onDone, onPlans, onSuppo
       <div className="cr-hero">
         <StatusBadge tone={tone} />
         <span className={`ac-tag ${tone === 'good' ? 'good' : tone === 'bad' ? 'bad' : 'warn'}`}>{copy.tag}</span>
-        <h2 id="ac-title">{copy.title}</h2>
+        <h2 id={titleId} tabIndex={-1}>{copy.title}</h2>
         <p aria-live="polite">{copy.lead}</p>
       </div>
 

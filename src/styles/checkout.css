@@ -81,3 +81,12 @@
   background:var(--paper);border:1px solid var(--line-2);color:var(--ink);font-size:var(--fs-300);font-weight:600;
   overflow-wrap:anywhere;
 }
+
+/* back from Stripe: the result screen sits in the checkout card, so it drops
+   the card it draws for itself — the overlay already is one */
+.co .cr{max-width:none;border:0;border-radius:0;padding:0;background:none;overflow:visible;}
+.co .cr::before{display:none;}
+.co .cr-hero h2:focus{outline:none;}
+/* the result's layers are positioned (they sit over its glow), which put the
+   hero on top of the close button on a phone, where the two overlap */
+.co .co-x{z-index:3;}

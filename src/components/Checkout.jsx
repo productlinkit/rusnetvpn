@@ -3,6 +3,9 @@ import { beginCheckout, getPlans } from '../features/billing/api'
 import { money, textOf } from '../features/account/labels'
 import { reducedMotion, say, setPageInert, shout, trapTab } from '../shared/a11y'
 import { useSession } from '../state/session'
+import { CheckoutResult } from './account/CheckoutResult'
+import * as accountApi from '../features/account/api'
+import { useResource } from '../features/account/useResource'
 
 /* ==========================================================================
    CHECKOUT — the review step before Stripe
@@ -115,6 +118,14 @@ export default function Checkout() {
   const { user, checkout, closeCheckout, checkoutToAccount, language } = useSession()
   const open = checkout !== null
   const code = checkout?.code ?? null
+  /* back from Stripe: the same box shows how the payment went */
+  const result = checkout?.result ?? null
+  /* keep the last mode painted while the overlay fades out */
+  const [mode, setMode] = useState(null)
+  useEffect(() => {
+    if (open) setMode(result)
+  }, [open, result])
+  const subscription = useResource(accountApi.getSubscription, { enabled: !!result })
 
   const root = useRef(null)
   const title = useRef(null)
@@ -175,7 +186,7 @@ export default function Checkout() {
     document.addEventListener('keydown', trap)
     document.addEventListener('keydown', onKey)
     el.scrollTop = 0
-    const t = window.setTimeout(() => title.current?.focus(), reducedMotion() ? 0 : 120)
+    const t = window.setTimeout(() => el.querySelector('#co-title')?.focus(), reducedMotion() ? 0 : 120)
     return () => {
       window.clearTimeout(t)
       document.removeEventListener('keydown', trap)
@@ -194,6 +205,13 @@ export default function Checkout() {
   }, [open, closeCheckout])
 
   const m = METHODS.find((x) => x.key === method) ?? METHODS[0]
+
+  /* close, then take the visitor to a section of the page behind */
+  const closeTo = (id) => {
+    closeCheckout()
+    const rm = reducedMotion()
+    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: rm ? 'auto' : 'smooth', block: 'start' }), 60)
+  }
 
   const changePlan = () => {
     closeCheckout()
@@ -215,7 +233,8 @@ export default function Checkout() {
     say('Taking you to the secure payment page, one moment.')
     try {
       /* leaves the page on success — the busy state stays up until it does */
-      await beginCheckout(plan.code, plan.n)
+      /* the bare name — the receipt adds "plan" itself */
+      await beginCheckout(plan.code, plan.n.replace(/ plan$/, ''))
     } catch (error) {
       setBusy(false)
       /* already subscribed, or already on this plan: not a failure, just
@@ -247,92 +266,105 @@ export default function Checkout() {
           <CloseIcon />
         </button>
 
-        <div className="co-body">
-          <h2 id="co-title" tabIndex={-1} ref={title}>Confirm your plan</h2>
-          <p className="co-sub">Cancel any time from your account. No charge until you confirm the payment.</p>
+        {mode ? (
+          <div className="co-body">
+            <CheckoutResult
+              outcome={mode}
+              subscription={subscription}
+              onDone={() => checkoutToAccount('overview')}
+              onSupport={() => checkoutToAccount('support')}
+              onPlans={changePlan}
+              onApps={() => closeTo('apps')}
+            />
+          </div>
+        ) : (
+          <div className="co-body">
+            <h2 id="co-title" tabIndex={-1} ref={title}>Confirm your plan</h2>
+            <p className="co-sub">Cancel any time from your account. No charge until you confirm the payment.</p>
 
-          {/* ---------- what you are buying ---------- */}
-          <section className="co-sum" aria-labelledby="co-sum-h" aria-busy={loading}>
-            <h3 id="co-sum-h">Order summary</h3>
-            <dl className="co-rows">
-              <div className="co-row"><dt>Plan</dt><dd>{plan?.n ?? '—'}</dd></div>
-              <div className="co-row"><dt>Billed</dt><dd>{plan ? `every ${plan.term}` : '—'}</dd></div>
-              {plan?.per && (
-                <div className="co-row"><dt>Works out at</dt><dd>{plan.per} / month</dd></div>
-              )}
-              <div className="co-row co-row--total">
-                <dt>Total payable at checkout</dt>
-                <dd><strong>{plan?.total ?? '—'}</strong></dd>
+            {/* ---------- what you are buying ---------- */}
+            <section className="co-sum" aria-labelledby="co-sum-h" aria-busy={loading}>
+              <h3 id="co-sum-h">Order summary</h3>
+              <dl className="co-rows">
+                <div className="co-row"><dt>Plan</dt><dd>{plan?.n ?? '—'}</dd></div>
+                <div className="co-row"><dt>Billed</dt><dd>{plan ? `every ${plan.term}` : '—'}</dd></div>
+                {plan?.per && (
+                  <div className="co-row"><dt>Works out at</dt><dd>{plan.per} / month</dd></div>
+                )}
+                <div className="co-row co-row--total">
+                  <dt>Total payable at checkout</dt>
+                  <dd><strong>{plan?.total ?? '—'}</strong></dd>
+                </div>
+              </dl>
+              <button type="button" className="co-change" onClick={changePlan}>Change plan</button>
+            </section>
+
+            {/* said here as well as in the pricing block: renewal terms belong at
+                the moment of payment, not only where the price was advertised */}
+            {plan && (
+              <p className="co-renew">
+                This renews automatically at <strong>{plan.total}</strong> every {plan.term} until you stop
+                it. To stop it, open <b>My Account → Subscription → Cancel subscription</b>. Cancelling keeps
+                your plan running until the paid period ends, and never deletes the account.
+              </p>
+            )}
+
+            <form className="co-form" noValidate onSubmit={submit}>
+              {/* whole-attempt failure — network, gateway, an unavailable plan */}
+              <div className={`f-alert f-alert--bad${alert ? ' on' : ''}`} role="alert" aria-live="assertive">
+                {alert}
               </div>
-            </dl>
-            <button type="button" className="co-change" onClick={changePlan}>Change plan</button>
-          </section>
 
-          {/* said here as well as in the pricing block: renewal terms belong at
-              the moment of payment, not only where the price was advertised */}
-          {plan && (
-            <p className="co-renew">
-              This renews automatically at <strong>{plan.total}</strong> every {plan.term} until you stop
-              it. To stop it, open <b>My Account → Subscription → Cancel subscription</b>. Cancelling keeps
-              your plan running until the paid period ends, and never deletes the account.
-            </p>
-          )}
+              <fieldset className="co-pay">
+                <legend>Payment method</legend>
+                <div className="co-methods">
+                  {METHODS.map((x) => (
+                    <label className="co-method" key={x.key}>
+                      <input
+                        type="radio"
+                        name="co-method"
+                        value={x.key}
+                        checked={method === x.key}
+                        onChange={() => setMethod(x.key)}
+                      />
+                      <span className="co-method-b">
+                        <span className="co-method-n">{x.n}</span>
+                        <span className="co-method-d">{x.d}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
-          <form className="co-form" noValidate onSubmit={submit}>
-            {/* whole-attempt failure — network, gateway, an unavailable plan */}
-            <div className={`f-alert f-alert--bad${alert ? ' on' : ''}`} role="alert" aria-live="assertive">
-              {alert}
-            </div>
-
-            <fieldset className="co-pay">
-              <legend>Payment method</legend>
-              <div className="co-methods">
-                {METHODS.map((x) => (
-                  <label className="co-method" key={x.key}>
-                    <input
-                      type="radio"
-                      name="co-method"
-                      value={x.key}
-                      checked={method === x.key}
-                      onChange={() => setMethod(x.key)}
-                    />
-                    <span className="co-method-b">
-                      <span className="co-method-n">{x.n}</span>
-                      <span className="co-method-d">{x.d}</span>
-                    </span>
-                  </label>
-                ))}
+              {/* the address is already known — this is a signed-in purchase —
+                  so it is shown, not asked for again */}
+              <div className="fld co-who">
+                <span className="lbl" id="co-email-l">Email address</span>
+                <span className="co-who-v">
+                  {user?.email ?? ''}
+                </span>
+                <span className="hint">Your receipt goes here. It is the address on your account.</span>
               </div>
-            </fieldset>
 
-            {/* the address is already known — this is a signed-in purchase —
-                so it is shown, not asked for again */}
-            <div className="fld co-who">
-              <span className="lbl" id="co-email-l">Email address</span>
-              <span className="co-who-v">
-                {user?.email ?? ''}
-              </span>
-              <span className="hint">Your receipt goes here. It is the address on your account.</span>
-            </div>
+              {/* saying where the payment finishes beats letting the button be a surprise */}
+              <p className="co-offsite" aria-live="polite">{m.note}</p>
 
-            {/* saying where the payment finishes beats letting the button be a surprise */}
-            <p className="co-offsite" aria-live="polite">{m.note}</p>
-
-            <button
-              type="submit"
-              className={`btn btn-red co-submit${busy ? ' is-busy' : ''}`}
-              disabled={busy || loading || !plan}
-              aria-disabled={busy || loading || !plan}
-            >
-              <span>{busy ? 'Opening secure payment…' : m.go(plan?.total ?? '')}</span>
-              <span className="spin" aria-hidden="true" />
-            </button>
-            <p className="co-secure">
-              <LockIcon />
-              <span>Payment is handled by Stripe. Your card details never touch this site.</span>
-            </p>
-          </form>
-        </div>
+              <button
+                type="submit"
+                className={`btn btn-red co-submit${busy ? ' is-busy' : ''}`}
+                disabled={busy || loading || !plan}
+                aria-disabled={busy || loading || !plan}
+              >
+                <span>{busy ? 'Opening secure payment…' : m.go(plan?.total ?? '')}</span>
+                <span className="spin" aria-hidden="true" />
+              </button>
+              <p className="co-secure">
+                <LockIcon />
+                <span>Payment is handled by Stripe. Your card details never touch this site.</span>
+              </p>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   )
